@@ -1,0 +1,116 @@
+/* =========================================================
+   LankaTech Spare Parts Management System — Shared Theme
+   Everyone imports this file. Do not override these variables
+   in your own pages — add page-specific styles separately.
+   ========================================================= */
+
+:root {
+    --lt-navy: #1E3A5F;
+    --lt-navy-dark: #14283F;
+    --lt-amber: #F5A623;
+    --lt-amber-dark: #D3890F;
+    --lt-bg: #F8F9FA;
+    --lt-text: #212529;
+    --lt-success: #28A745;
+    --lt-danger: #DC3545;
+    --lt-border: #E2E5E9;
+}
+
+body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background-color: var(--lt-bg);
+    color: var(--lt-text);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+}
+
+/* Navbar */
+.app-navbar {
+    background-color: var(--lt-navy);
+}
+.app-navbar .navbar-brand {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+.app-navbar .nav-link {
+    font-weight: 500;
+}
+.app-navbar .nav-link:hover {
+    color: var(--lt-amber) !important;
+}
+
+/* Footer */
+.app-footer {
+    background-color: var(--lt-navy-dark);
+    color: #cfd8e3;
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: var(--lt-navy);
+    border-color: var(--lt-navy);
+}
+.btn-primary:hover {
+    background-color: var(--lt-navy-dark);
+    border-color: var(--lt-navy-dark);
+}
+.btn-accent, .btn-warning {
+    background-color: var(--lt-amber);
+    border-color: var(--lt-amber);
+    color: #1a1a1a;
+    font-weight: 600;
+}
+.btn-accent:hover {
+    background-color: var(--lt-amber-dark);
+    border-color: var(--lt-amber-dark);
+    color: #1a1a1a;
+}
+
+/* Cards / panels used on list & dashboard pages */
+.card {
+    border: 1px solid var(--lt-border);
+    border-radius: 0.5rem;
+}
+.card-header {
+    background-color: white;
+    border-bottom: 1px solid var(--lt-border);
+    font-weight: 600;
+}
+
+/* Tables — consistent across every list page */
+.table thead {
+    background-color: var(--lt-navy);
+    color: white;
+}
+.table thead th {
+    font-weight: 500;
+    border: none;
+}
+.table-hover tbody tr:hover {
+    background-color: #eef2f6;
+}
+
+/* Status badges — reuse these classes everywhere (stock, orders, invoices, returns) */
+.badge-in-stock   { background-color: var(--lt-success); }
+.badge-low-stock  { background-color: var(--lt-amber); color: #1a1a1a; }
+.badge-out-stock  { background-color: var(--lt-danger); }
+.badge-pending    { background-color: #6c757d; }
+.badge-approved   { background-color: var(--lt-success); }
+.badge-rejected   { background-color: var(--lt-danger); }
+
+/* Forms */
+.form-label {
+    font-weight: 500;
+}
+.form-control:focus, .form-select:focus {
+    border-color: var(--lt-navy);
+    box-shadow: 0 0 0 0.2rem rgba(30, 58, 95, 0.15);
+}
+
+/* Small action icon buttons in tables (Edit/Delete) — keep tables compact */
+.btn-icon {
+    padding: 0.25rem 0.5rem;
+    line-height: 1;
+}
