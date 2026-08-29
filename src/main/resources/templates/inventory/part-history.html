@@ -1,0 +1,52 @@
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
+<head><title>Part history</title></head>
+<body>
+<section>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2 class="mb-0" th:text="'History — ' + ${part.name}"></h2>
+            <p class="text-muted mb-0" th:text="'Product code: ' + ${part.productCode}"></p>
+        </div>
+        <a th:href="@{/parts}" class="btn btn-outline-secondary">Back to inventory</a>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Event</th>
+                    <th>Quantity</th>
+                    <th>Notes</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="entry : ${historyEntries}">
+                    <td th:text="${#temporals.format(entry.eventDate, 'dd MMM yyyy, HH:mm')}"></td>
+                    <td>
+                        <span th:switch="${entry.eventType}">
+                            <span th:case="'RECEIVED'" class="badge badge-in-stock">Received</span>
+                            <span th:case="'SOLD'" class="badge badge-pending">Sold</span>
+                            <span th:case="'RETURNED'" class="badge badge-low-stock">Returned</span>
+                            <span th:case="'ADJUSTED'" class="badge badge-low-stock">Adjusted</span>
+                            <span th:case="'DAMAGED'" class="badge badge-out-stock">Damaged</span>
+                            <span th:case="*" th:text="${entry.eventType}"></span>
+                        </span>
+                    </td>
+                    <td th:text="${entry.quantity}"></td>
+                    <td th:text="${entry.notes}"></td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(historyEntries)}">
+                    <td colspan="4" class="text-center py-4">No history recorded for this part yet.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</section>
+</body>
+</html>

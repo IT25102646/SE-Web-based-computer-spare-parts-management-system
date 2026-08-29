@@ -1,0 +1,54 @@
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
+<head><title>Adjust stock</title></head>
+<body>
+<section>
+
+    <h2>Adjust stock</h2>
+    <p class="text-muted">
+        <strong th:text="${part.name}"></strong> —
+        current quantity: <strong th:text="${part.stockQuantity}"></strong>
+    </p>
+
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+    <div class="card">
+        <div class="card-body">
+            <form th:action="@{/parts/adjust/{id}(id=${part.id})}" method="post">
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Change amount</label>
+                        <input type="number" name="changeAmount" class="form-control" required
+                               placeholder="e.g. -5 or 10">
+                        <div class="form-text">Use a negative number to remove stock, positive to add.</div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Reason</label>
+                        <select name="reason" class="form-select" required>
+                            <option value="" disabled selected>Select a reason</option>
+                            <option value="Damaged">Damaged</option>
+                            <option value="Lost">Lost</option>
+                            <option value="Correction">Correction (miscount)</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Adjusted by</label>
+                        <input type="text" name="adjustedBy" class="form-control" placeholder="Staff name">
+                    </div>
+                </div>
+
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-accent">Save adjustment</button>
+                    <a th:href="@{/parts}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</section>
+</body>
+</html>
