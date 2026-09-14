@@ -1,0 +1,164 @@
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
+
+<head>
+    <title>Orders</title>
+</head>
+
+<body>
+<section>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">Orders</h2>
+
+        <a th:href="@{/orders/new}" class="btn btn-accent">
+            <i class="bi bi-plus-lg"></i> Create Order
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+
+            <table class="table table-hover mb-0">
+
+                <thead>
+                <tr>
+                    <th>Order No.</th>
+                    <th>Customer</th>
+                    <th>Email</th>
+                    <th>Order Date</th>
+                    <th>Total Amount</th>
+                    <th>Status</th>
+                    <th>Update Status</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+
+                <tbody>
+
+                <tr th:each="order : ${orders}">
+
+                    <td th:text="${order.orderNumber}"></td>
+
+                    <td th:text="${order.customerName}"></td>
+
+                    <td th:text="${order.customerEmail}"></td>
+
+                    <td th:text="${order.orderDate}"></td>
+
+                    <td th:text="'Rs. ' + ${order.totalAmount}"></td>
+
+                    <!-- Current Status -->
+                    <td>
+
+                        <span th:if="${order.status == 'PENDING'}"
+                              class="badge bg-warning text-dark">
+                            Pending
+                        </span>
+
+                        <span th:if="${order.status == 'CONFIRMED'}"
+                              class="badge bg-primary">
+                            Confirmed
+                        </span>
+
+                        <span th:if="${order.status == 'SHIPPED'}"
+                              class="badge bg-info text-dark">
+                            Shipped
+                        </span>
+
+                        <span th:if="${order.status == 'DELIVERED'}"
+                              class="badge bg-success">
+                            Delivered
+                        </span>
+
+                        <span th:if="${order.status == 'CANCELLED'}"
+                              class="badge bg-danger">
+                            Cancelled
+                        </span>
+
+                    </td>
+
+                    <!-- Update Status -->
+                    <td>
+
+                        <form th:action="@{/orders/status/{id}(id=${order.id})}"
+                              method="post"
+                              class="d-flex gap-2">
+
+                            <select name="status"
+                                    class="form-select form-select-sm"
+                                    style="width: 130px;">
+
+                                <option value="PENDING"
+                                        th:selected="${order.status == 'PENDING'}">
+                                    Pending
+                                </option>
+
+                                <option value="CONFIRMED"
+                                        th:selected="${order.status == 'CONFIRMED'}">
+                                    Confirmed
+                                </option>
+
+                                <option value="SHIPPED"
+                                        th:selected="${order.status == 'SHIPPED'}">
+                                    Shipped
+                                </option>
+
+                                <option value="DELIVERED"
+                                        th:selected="${order.status == 'DELIVERED'}">
+                                    Delivered
+                                </option>
+
+                                <option value="CANCELLED"
+                                        th:selected="${order.status == 'CANCELLED'}">
+                                    Cancelled
+                                </option>
+
+                            </select>
+
+                            <button type="submit"
+                                    class="btn btn-sm btn-primary">
+                                Update
+                            </button>
+
+                        </form>
+
+                    </td>
+
+                    <!-- Actions -->
+                    <td class="text-end">
+
+                        <a th:href="@{/orders/edit/{id}(id=${order.id})}"
+                           class="btn btn-sm btn-outline-secondary btn-icon"
+                           title="Edit">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+
+                        <a th:href="@{/orders/delete/{id}(id=${order.id})}"
+                           class="btn btn-sm btn-outline-danger btn-icon"
+                           title="Delete"
+                           onclick="return confirm('Delete this order?');">
+                            <i class="bi bi-trash"></i>
+                        </a>
+
+                    </td>
+
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(orders)}">
+                    <td colspan="8" class="text-center py-4">
+                        No orders found.
+                    </td>
+                </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+    </div>
+
+</section>
+</body>
+</html>
+
