@@ -1,0 +1,93 @@
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
+<head><title>Returns & Warranty Claims</title></head>
+<body>
+<section>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2 class="mb-1">Returns & Warranty Claims</h2>
+            <p class="text-muted mb-0">Create, track and process customer return requests.</p>
+        </div>
+        <a th:href="@{/returns/new}" class="btn btn-accent">
+            <i class="bi bi-plus-lg"></i> New Claim
+        </a>
+    </div>
+
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <form th:action="@{/returns}" method="get" class="d-flex gap-2">
+                <input type="text" name="search" class="form-control"
+                       placeholder="Search customer, contact, part code, part name or status"
+                       th:value="${searchTerm}">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Search</button>
+                <a th:href="@{/returns}" class="btn btn-outline-secondary">Clear</a>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Customer</th>
+                    <th>Part</th>
+                    <th>Qty</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="item : ${returns}">
+                    <td th:text="${item.id}"></td>
+                    <td>
+                        <div class="fw-semibold" th:text="${item.customerName}"></div>
+                        <small class="text-muted" th:text="${item.customerContact}"></small>
+                    </td>
+                    <td>
+                        <div class="fw-semibold" th:text="${item.part.name}"></div>
+                        <small class="text-muted" th:text="${item.part.productCode}"></small>
+                    </td>
+                    <td th:text="${item.quantity}"></td>
+                    <td th:text="${item.claimType}"></td>
+                    <td>
+                        <span th:if="${item.status.name() == 'PENDING'}" class="badge badge-pending">Pending</span>
+                        <span th:if="${item.status.name() == 'APPROVED'}" class="badge badge-approved">Approved</span>
+                        <span th:if="${item.status.name() == 'REJECTED'}" class="badge badge-rejected">Rejected</span>
+                        <span th:if="${item.status.name() == 'CANCELLED'}" class="badge bg-secondary">Cancelled</span>
+                    </td>
+                    <td th:text="${#temporals.format(item.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+                    <td class="text-end">
+                        <a th:href="@{/returns/{id}(id=${item.id})}" class="btn btn-sm btn-outline-primary btn-icon" title="View">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <a th:if="${item.status.name() == 'PENDING'}"
+                           th:href="@{/returns/edit/{id}(id=${item.id})}"
+                           class="btn btn-sm btn-outline-secondary btn-icon" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form th:if="${item.status.name() != 'APPROVED'}"
+                              th:action="@{/returns/{id}/delete(id=${item.id})}" method="post" class="d-inline"
+                              onsubmit="return confirm('Delete this return request?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger btn-icon" title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(returns)}">
+                    <td colspan="8" class="text-center py-4">No return or warranty claims found.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+</body>
+</html>

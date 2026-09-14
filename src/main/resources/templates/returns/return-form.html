@@ -1,0 +1,81 @@
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
+<head><title>Return Form</title></head>
+<body>
+<section>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 th:text="${returnRequest.id == null ? 'New Return / Warranty Claim' : 'Edit Return Request #' + returnRequest.id}"></h2>
+        <a th:href="@{/returns}" class="btn btn-outline-secondary">Back</a>
+    </div>
+
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+    <div class="card">
+        <div class="card-body">
+            <form th:action="${returnRequest.id == null ? @{/returns/save} : @{/returns/update/{id}(id=${returnRequest.id})}}"
+                  th:object="${returnRequest}" method="post">
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Customer Name *</label>
+                        <input type="text" th:field="*{customerName}" class="form-control">
+                        <div class="text-danger small" th:errors="*{customerName}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Customer Contact *</label>
+                        <input type="text" th:field="*{customerContact}" class="form-control">
+                        <div class="text-danger small" th:errors="*{customerContact}"></div>
+                    </div>
+
+                    <div class="col-md-8">
+                        <label class="form-label">Spare Part *</label>
+                        <select name="partId" class="form-select" required>
+                            <option value="">-- Select part --</option>
+                            <option th:each="part : ${parts}"
+                                    th:value="${part.id}"
+                                    th:selected="${selectedPartId != null ? selectedPartId == part.id : (returnRequest.part != null and returnRequest.part.id == part.id)}"
+                                    th:text="${part.productCode + ' - ' + part.name + ' (Stock: ' + part.stockQuantity + ')'}"></option>
+                        </select>
+                        <div class="text-danger small" th:errors="*{part}"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Quantity *</label>
+                        <input type="number" min="1" th:field="*{quantity}" class="form-control">
+                        <div class="text-danger small" th:errors="*{quantity}"></div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Claim Type *</label>
+                        <select th:field="*{claimType}" class="form-select">
+                            <option th:each="type : ${T(com.comspare.returns.ReturnRequest.ClaimType).values()}"
+                                    th:value="${type}" th:text="${type}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Preferred Resolution</label>
+                        <select th:field="*{resolution}" class="form-select">
+                            <option value="">-- Select later if unknown --</option>
+                            <option th:each="resolution : ${T(com.comspare.returns.ReturnRequest.Resolution).values()}"
+                                    th:value="${resolution}" th:text="${resolution}"></option>
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Return / Warranty Reason *</label>
+                        <textarea th:field="*{returnReason}" class="form-control" rows="4"
+                                  placeholder="Example: Defective fan, item arrived damaged, wrong part supplied..."></textarea>
+                        <div class="text-danger small" th:errors="*{returnReason}"></div>
+                        <div class="form-text">Use words such as “defective”, “damaged” or “faulty” when the item should be marked as damaged in inventory after approval.</div>
+                    </div>
+                </div>
+
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Save Claim</button>
+                    <a th:href="@{/returns}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+</body>
+</html>
