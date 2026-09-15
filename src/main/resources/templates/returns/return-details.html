@@ -4,263 +4,160 @@
       th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
 
 <head>
-    <title>Returns & Warranty Claims</title>
+    <title>Return Claim Details</title>
 </head>
 
 <body>
 
 <section>
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between mb-4">
 
         <div>
-            <h2>Returns & Warranty Claims</h2>
+            <h2>Return Claim Details</h2>
             <p class="text-muted">
-                Manage customer return and warranty requests.
+                Claim #<span th:text="${returnRequest.id}">1</span>
             </p>
         </div>
 
-        <a th:href="@{/returns/new}"
-           class="btn btn-primary">
-            <i class="bi bi-plus-circle me-1"></i>
-            New Claim
+        <a th:href="@{/returns}"
+           class="btn btn-secondary">
+            Back
         </a>
 
     </div>
 
-    <!-- Success message -->
     <div th:if="${successMessage}"
          class="alert alert-success"
          th:text="${successMessage}">
     </div>
 
-    <!-- Error message -->
     <div th:if="${errorMessage}"
          class="alert alert-danger"
          th:text="${errorMessage}">
     </div>
 
-    <!-- Search -->
-    <form method="get"
-          th:action="@{/returns}"
-          class="card card-body mb-4">
-
-        <div class="row g-3">
-
-            <div class="col-md-4">
-
-                <label class="form-label">
-                    Search customer
-                </label>
-
-                <input type="text"
-                       name="search"
-                       th:value="${search}"
-                       class="form-control"
-                       placeholder="Customer name/contact">
-
-            </div>
-
-            <div class="col-md-3">
-
-                <label class="form-label">
-                    Status
-                </label>
-
-                <select name="status"
-                        class="form-select">
-
-                    <option value="">All statuses</option>
-
-                    <option value="PENDING"
-                            th:selected="${status == 'PENDING'}">
-                        Pending
-                    </option>
-
-                    <option value="APPROVED"
-                            th:selected="${status == 'APPROVED'}">
-                        Approved
-                    </option>
-
-                    <option value="REJECTED"
-                            th:selected="${status == 'REJECTED'}">
-                        Rejected
-                    </option>
-
-                    <option value="CANCELLED"
-                            th:selected="${status == 'CANCELLED'}">
-                        Cancelled
-                    </option>
-
-                </select>
-
-            </div>
-
-            <div class="col-md-3">
-
-                <label class="form-label">
-                    Claim type
-                </label>
-
-                <select name="claimType"
-                        class="form-select">
-
-                    <option value="">All types</option>
-
-                    <option value="RETURN"
-                            th:selected="${claimType == 'RETURN'}">
-                        Return
-                    </option>
-
-                    <option value="WARRANTY"
-                            th:selected="${claimType == 'WARRANTY'}">
-                        Warranty
-                    </option>
-
-                </select>
-
-            </div>
-
-            <div class="col-md-2 d-flex align-items-end">
-
-                <button class="btn btn-outline-primary w-100">
-                    Search
-                </button>
-
-            </div>
-
-        </div>
-
-    </form>
-
-    <!-- Claims table -->
-
     <div class="card">
 
-        <div class="table-responsive">
+        <div class="card-body">
 
-            <table class="table table-hover mb-0">
+            <div class="row g-3">
 
-                <thead>
+                <div class="col-md-6">
+                    <strong>Customer</strong>
+                    <p th:text="${returnRequest.customerName}">
+                        Customer
+                    </p>
+                </div>
 
-                <tr>
-                    <th>ID</th>
-                    <th>Customer</th>
-                    <th>Part</th>
-                    <th>Qty</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                    <th>Created</th>
-                    <th>Actions</th>
-                </tr>
+                <div class="col-md-6">
+                    <strong>Contact</strong>
+                    <p th:text="${returnRequest.customerContact}">
+                        Contact
+                    </p>
+                </div>
 
-                </thead>
+                <div class="col-md-6">
+                    <strong>Part</strong>
+                    <p th:text="${returnRequest.part.name}">
+                        Part
+                    </p>
+                </div>
 
-                <tbody>
-
-                <tr th:each="r : ${returns}">
-
-                    <td th:text="${r.id}">
+                <div class="col-md-6">
+                    <strong>Quantity</strong>
+                    <p th:text="${returnRequest.quantity}">
                         1
-                    </td>
+                    </p>
+                </div>
 
-                    <td>
-                        <strong th:text="${r.customerName}">
-                            Customer
-                        </strong>
-
-                        <br>
-
-                        <small class="text-muted"
-                               th:text="${r.customerContact}">
-                            Contact
-                        </small>
-                    </td>
-
-                    <td th:text="${r.part.name}">
-                        Keyboard
-                    </td>
-
-                    <td th:text="${r.quantity}">
-                        1
-                    </td>
-
-                    <td th:text="${r.claimType}">
+                <div class="col-md-6">
+                    <strong>Claim Type</strong>
+                    <p th:text="${returnRequest.claimType}">
                         WARRANTY
-                    </td>
+                    </p>
+                </div>
 
-                    <td>
+                <div class="col-md-6">
+                    <strong>Status</strong>
+                    <p th:text="${returnRequest.status}">
+                        PENDING
+                    </p>
+                </div>
 
-                        <span class="badge bg-warning text-dark"
-                              th:if="${r.status == 'PENDING'}">
-                            PENDING
-                        </span>
+                <div class="col-12">
+                    <strong>Reason</strong>
+                    <p th:text="${returnRequest.returnReason}">
+                        Reason
+                    </p>
+                </div>
 
-                        <span class="badge bg-success"
-                              th:if="${r.status == 'APPROVED'}">
-                            APPROVED
-                        </span>
+                <div class="col-md-6">
+                    <strong>Resolution</strong>
+                    <p th:text="${returnRequest.resolution}">
+                        REPLACEMENT
+                    </p>
+                </div>
 
-                        <span class="badge bg-danger"
-                              th:if="${r.status == 'REJECTED'}">
-                            REJECTED
-                        </span>
+                <div class="col-md-6">
+                    <strong>Inventory Processed</strong>
+                    <p th:text="${returnRequest.inventoryProcessed}">
+                        false
+                    </p>
+                </div>
 
-                        <span class="badge bg-secondary"
-                              th:if="${r.status == 'CANCELLED'}">
-                            CANCELLED
-                        </span>
+                <div class="col-12"
+                     th:if="${returnRequest.decisionNotes != null}">
 
-                    </td>
+                    <strong>Decision Notes</strong>
 
-                    <td th:text="${#temporals.format(r.createdAt, 'yyyy-MM-dd HH:mm')}">
-                        Date
-                    </td>
+                    <p th:text="${returnRequest.decisionNotes}">
+                        Notes
+                    </p>
 
-                    <td>
+                </div>
 
-                        <a th:href="@{/returns/view/{id}(id=${r.id})}"
-                           class="btn btn-sm btn-outline-primary">
-                            View
-                        </a>
+            </div>
 
-                        <a th:if="${r.status == 'PENDING'}"
-                           th:href="@{/returns/edit/{id}(id=${r.id})}"
-                           class="btn btn-sm btn-outline-secondary">
-                            Edit
-                        </a>
+            <hr>
 
-                        <form th:if="${r.status == 'PENDING'}"
-                              th:action="@{/returns/delete/{id}(id=${r.id})}"
-                              method="post"
-                              class="d-inline">
+            <!-- Approve -->
 
-                            <button type="submit"
-                                    class="btn btn-sm btn-outline-danger"
-                                    onclick="return confirm('Delete this claim?');">
-                                Delete
-                            </button>
+            <div th:if="${returnRequest.status == 'PENDING'}">
 
-                        </form>
+                <form th:action="@{/returns/approve/{id}(id=${returnRequest.id})}"
+                      method="post"
+                      class="mb-2">
 
-                    </td>
+                    <label class="form-label">
+                        Decision Notes
+                    </label>
 
-                </tr>
+                    <textarea name="decisionNotes"
+                              class="form-control mb-2"
+                              placeholder="Optional decision notes">
+                    </textarea>
 
-                <tr th:if="${#lists.isEmpty(returns)}">
+                    <button class="btn btn-success">
+                        Approve Claim
+                    </button>
 
-                    <td colspan="8"
-                        class="text-center py-4 text-muted">
+                </form>
 
-                        No return or warranty claims found.
+                <form th:action="@{/returns/reject/{id}(id=${returnRequest.id})}"
+                      method="post">
 
-                    </td>
+                    <input type="hidden"
+                           name="decisionNotes"
+                           value="Claim rejected after review">
 
-                </tr>
+                    <button class="btn btn-danger">
+                        Reject Claim
+                    </button>
 
-                </tbody>
+                </form>
 
-            </table>
+            </div>
 
         </div>
 
