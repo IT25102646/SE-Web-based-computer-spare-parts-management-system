@@ -1,197 +1,255 @@
+```html
 <!DOCTYPE html>
 <html lang="en"
       xmlns:th="http://www.thymeleaf.org"
       th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
 
 <head>
+
     <title th:text="${pageTitle}">
         Return Claim
     </title>
+
 </head>
 
 <body>
 
 <section>
 
+    <!-- PAGE HEADER -->
+
     <div class="mb-4">
+
         <h2 th:text="${pageTitle}">
-            Return Claim
+            Create Return Claim
         </h2>
+
+        <p class="text-muted">
+            Enter the return or warranty claim information.
+        </p>
+
     </div>
+
+
+    <!-- ERROR -->
 
     <div th:if="${errorMessage}"
          class="alert alert-danger"
          th:text="${errorMessage}">
     </div>
 
+
+    <!-- FORM -->
+
     <form th:object="${returnRequest}"
           th:action="${returnRequest.id == null}
-                    ? @{/returns/save}
-                    : @{/returns/update/{id}(id=${returnRequest.id})}"
+                     ? @{/returns/save}
+                     : @{/returns/update/{id}(id=${returnRequest.id})}"
           method="post"
-          class="card card-body">
+          class="card">
 
-        <div class="row g-3">
+        <div class="card-body">
 
-            <div class="col-md-6">
+            <div class="row g-4">
 
-                <label class="form-label">
-                    Customer Name
-                </label>
 
-                <input type="text"
-                       th:field="*{customerName}"
-                       class="form-control">
+                <!-- CUSTOMER NAME -->
 
-                <div class="text-danger"
-                     th:errors="*{customerName}">
+                <div class="col-md-6">
+
+                    <label class="form-label">
+                        Customer Name *
+                    </label>
+
+                    <input type="text"
+                           th:field="*{customerName}"
+                           class="form-control"
+                           placeholder="Enter customer name">
+
+                    <div class="text-danger"
+                         th:errors="*{customerName}">
+                    </div>
+
                 </div>
 
-            </div>
 
-            <div class="col-md-6">
+                <!-- CUSTOMER CONTACT -->
 
-                <label class="form-label">
-                    Customer Contact
-                </label>
+                <div class="col-md-6">
 
-                <input type="text"
-                       th:field="*{customerContact}"
-                       class="form-control">
+                    <label class="form-label">
+                        Customer Contact *
+                    </label>
 
-                <div class="text-danger"
-                     th:errors="*{customerContact}">
+                    <input type="text"
+                           th:field="*{customerContact}"
+                           class="form-control"
+                           placeholder="0771234567">
+
+                    <div class="text-danger"
+                         th:errors="*{customerContact}">
+                    </div>
+
                 </div>
 
-            </div>
 
-            <div class="col-md-6">
+                <!-- PART -->
 
-                <label class="form-label">
-                    Spare Part
-                </label>
+                <div class="col-md-6">
 
-                <select th:field="*{part.id}"
-                        class="form-select">
+                    <label class="form-label">
+                        Spare Part *
+                    </label>
 
-                    <option value="">
-                        -- Select Part --
-                    </option>
+                    <select th:field="*{part.id}"
+                            class="form-select">
 
-                    <option th:each="p : ${parts}"
-                            th:value="${p.id}"
-                            th:text="${p.productCode + ' - ' + p.name}">
-                    </option>
+                        <option value="">
+                            -- Select Spare Part --
+                        </option>
 
-                </select>
+                        <option th:each="p : ${parts}"
+                                th:value="${p.id}"
+                                th:text="${p.productCode + ' - ' + p.name}">
+                        </option>
 
-                <div class="text-danger"
-                     th:errors="*{part}">
+                    </select>
+
                 </div>
 
-            </div>
 
-            <div class="col-md-6">
+                <!-- QUANTITY -->
 
-                <label class="form-label">
-                    Quantity
-                </label>
+                <div class="col-md-6">
 
-                <input type="number"
-                       min="1"
-                       th:field="*{quantity}"
-                       class="form-control">
+                    <label class="form-label">
+                        Quantity *
+                    </label>
 
-                <div class="text-danger"
-                     th:errors="*{quantity}">
+                    <input type="number"
+                           th:field="*{quantity}"
+                           min="1"
+                           class="form-control">
+
+                    <div class="text-danger"
+                         th:errors="*{quantity}">
+                    </div>
+
                 </div>
 
-            </div>
 
-            <div class="col-md-6">
+                <!-- CLAIM TYPE -->
 
-                <label class="form-label">
-                    Claim Type
-                </label>
+                <div class="col-md-6">
 
-                <select th:field="*{claimType}"
-                        class="form-select">
+                    <label class="form-label">
+                        Claim Type *
+                    </label>
 
-                    <option value="RETURN">
-                        RETURN
-                    </option>
+                    <select th:field="*{claimType}"
+                            class="form-select">
 
-                    <option value="WARRANTY">
-                        WARRANTY
-                    </option>
+                        <option value="RETURN">
+                            Product Return
+                        </option>
 
-                </select>
+                        <option value="WARRANTY">
+                            Warranty Claim
+                        </option>
 
-            </div>
+                    </select>
 
-            <div class="col-md-6">
+                </div>
 
-                <label class="form-label">
-                    Preferred Resolution
-                </label>
 
-                <select th:field="*{resolution}"
-                        class="form-select">
+                <!-- RESOLUTION -->
 
-                    <option value="">
-                        -- Select --
-                    </option>
+                <div class="col-md-6">
 
-                    <option value="REFUND">
-                        REFUND
-                    </option>
+                    <label class="form-label">
+                        Preferred Resolution
+                    </label>
 
-                    <option value="REPLACEMENT">
-                        REPLACEMENT
-                    </option>
+                    <select th:field="*{resolution}"
+                            class="form-select">
 
-                    <option value="REPAIR">
-                        REPAIR
-                    </option>
+                        <option value="">
+                            -- Select Resolution --
+                        </option>
 
-                    <option value="STORE_CREDIT">
-                        STORE CREDIT
-                    </option>
+                        <option value="REFUND">
+                            Refund
+                        </option>
 
-                </select>
+                        <option value="REPLACEMENT">
+                            Replacement
+                        </option>
 
-            </div>
+                        <option value="REPAIR">
+                            Repair
+                        </option>
 
-            <div class="col-12">
+                        <option value="STORE_CREDIT">
+                            Store Credit
+                        </option>
 
-                <label class="form-label">
-                    Return / Warranty Reason
-                </label>
+                    </select>
 
-                <textarea th:field="*{returnReason}"
-                          class="form-control"
-                          rows="4"
-                          placeholder="Explain why the item is being returned...">
-                </textarea>
+                </div>
 
-                <div class="text-danger"
-                     th:errors="*{returnReason}">
+
+                <!-- REASON -->
+
+                <div class="col-12">
+
+                    <label class="form-label">
+                        Return / Warranty Reason *
+                    </label>
+
+                    <textarea th:field="*{returnReason}"
+                              class="form-control"
+                              rows="5"
+                              placeholder="Explain the reason for the return...">
+                    </textarea>
+
+                    <div class="text-danger"
+                         th:errors="*{returnReason}">
+                    </div>
+
                 </div>
 
             </div>
 
         </div>
 
-        <div class="mt-4">
+
+        <!-- BUTTONS -->
+
+        <div class="card-footer">
+
+            <!-- CREATE / UPDATE -->
 
             <button type="submit"
                     class="btn btn-primary">
-                Save Claim
+
+                <span th:if="${returnRequest.id == null}">
+                    Create Claim
+                </span>
+
+                <span th:unless="${returnRequest.id == null}">
+                    Update Claim
+                </span>
+
             </button>
+
+
+            <!-- CANCEL -->
 
             <a th:href="@{/returns}"
                class="btn btn-secondary">
+
                 Cancel
+
             </a>
 
         </div>
@@ -202,3 +260,4 @@
 
 </body>
 </html>
+```
