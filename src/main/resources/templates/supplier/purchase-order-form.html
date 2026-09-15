@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>Purchase Order</title>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f7fa;
+            margin: 40px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Create Purchase Order</h1>
+
+    <form th:action="@{/purchase-orders/save}"
+          th:object="${purchaseOrder}"
+          method="post">
+
+        <input type="hidden"
+               th:field="*{id}">
+
+        <label>Order Number</label>
+
+        <input type="text"
+               th:field="*{orderNumber}"
+               placeholder="PO-001"
+               required>
+
+        <label>Supplier</label>
+
+        <select th:field="*{supplier.id}"
+                required>
+
+            <option value="">
+                Select Supplier
+            </option>
+
+            <option th:each="supplier : ${suppliers}"
+                    th:value="${supplier.id}"
+                    th:text="${supplier.supplierName}">
+            </option>
+
+        </select>
+
+        <label>Order Date</label>
+
+        <input type="date"
+               th:field="*{orderDate}">
+
+        <label>Expected Delivery Date</label>
+
+        <input type="date"
+               th:field="*{expectedDeliveryDate}">
+
+        <label>Notes</label>
+
+        <textarea th:field="*{notes}"
+                  rows="4"></textarea>
+
+        <input type="hidden"
+               th:field="*{status}">
+
+        <button type="submit">
+            Save Purchase Order
+        </button>
+
+        <a th:href="@{/purchase-orders}">
+            Cancel
+        </a>
+
+    </form>
+
+</div>
+
+</body>
+</html>
