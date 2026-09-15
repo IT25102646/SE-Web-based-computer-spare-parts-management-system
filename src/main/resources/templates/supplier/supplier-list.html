@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Supplier Management</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: #f5f7fa;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 10px 16px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background: #e9eef5;
+        }
+
+        .edit {
+            color: #2563eb;
+        }
+
+        .delete {
+            color: #dc2626;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Supplier Management</h1>
+
+    <a class="button"
+       th:href="@{/suppliers/new}">
+        Add New Supplier
+    </a>
+
+    <table>
+
+        <thead>
+
+        <tr>
+            <th>ID</th>
+            <th>Supplier Name</th>
+            <th>Contact Person</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Address</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+
+        </thead>
+
+        <tbody>
+
+        <tr th:each="supplier : ${suppliers}">
+
+            <td th:text="${supplier.id}"></td>
+
+            <td th:text="${supplier.supplierName}"></td>
+
+            <td th:text="${supplier.contactPerson}"></td>
+
+            <td th:text="${supplier.phone}"></td>
+
+            <td th:text="${supplier.email}"></td>
+
+            <td th:text="${supplier.address}"></td>
+
+            <td th:text="${supplier.status}"></td>
+
+            <td>
+
+                <a class="edit"
+                   th:href="@{/suppliers/edit/{id}(id=${supplier.id})}">
+                    Edit
+                </a>
+
+                |
+
+                <a class="delete"
+                   th:href="@{/suppliers/delete/{id}(id=${supplier.id})}"
+                   onclick="return confirm('Delete this supplier?');">
+                    Delete
+                </a>
+
+            </td>
+
+        </tr>
+
+        <tr th:if="${#lists.isEmpty(suppliers)}">
+
+            <td colspan="8">
+                No suppliers found.
+            </td>
+
+        </tr>
+
+        </tbody>
+
+    </table>
+
+</div>
+
+</body>
+</html>

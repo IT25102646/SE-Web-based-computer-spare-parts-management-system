@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>Purchase Orders</title>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: #f5f7fa;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 10px 16px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background: #e9eef5;
+        }
+
+        button {
+            padding: 7px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .receive {
+            background: #16a34a;
+            color: white;
+        }
+
+        .cancel {
+            background: #dc2626;
+            color: white;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Purchase Orders</h1>
+
+    <a class="button"
+       th:href="@{/purchase-orders/new}">
+        Create Purchase Order
+    </a>
+
+    <table>
+
+        <thead>
+
+        <tr>
+            <th>ID</th>
+            <th>Order Number</th>
+            <th>Supplier</th>
+            <th>Order Date</th>
+            <th>Expected Delivery</th>
+            <th>Delivery Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+
+        </thead>
+
+        <tbody>
+
+        <tr th:each="po : ${purchaseOrders}">
+
+            <td th:text="${po.id}"></td>
+
+            <td th:text="${po.orderNumber}"></td>
+
+            <td th:text="${po.supplier.supplierName}"></td>
+
+            <td th:text="${po.orderDate}"></td>
+
+            <td th:text="${po.expectedDeliveryDate}"></td>
+
+            <td th:text="${po.deliveryDate}"></td>
+
+            <td th:text="${po.status}"></td>
+
+            <td>
+
+                <a th:href="@{/purchase-orders/edit/{id}(id=${po.id})}">
+                    Edit
+                </a>
+
+                <form th:if="${po.status != 'RECEIVED'}"
+                      th:action="@{/purchase-orders/confirm/{id}(id=${po.id})}"
+                      method="post"
+                      style="display:inline;">
+
+                    <button class="receive"
+                            type="submit"
+                            onclick="return confirm('Confirm this delivery?');">
+                        Confirm Delivery
+                    </button>
+
+                </form>
+
+                <form th:if="${po.status != 'RECEIVED' and po.status != 'CANCELLED'}"
+                      th:action="@{/purchase-orders/cancel/{id}(id=${po.id})}"
+                      method="post"
+                      style="display:inline;">
+
+                    <button class="cancel"
+                            type="submit"
+                            onclick="return confirm('Cancel this purchase order?');">
+                        Cancel
+                    </button>
+
+                </form>
+
+            </td>
+
+        </tr>
+
+        <tr th:if="${#lists.isEmpty(purchaseOrders)}">
+
+            <td colspan="8">
+                No purchase orders found.
+            </td>
+
+        </tr>
+
+        </tbody>
+
+    </table>
+
+</div>
+
+</body>
+</html>
