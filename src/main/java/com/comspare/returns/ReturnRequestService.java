@@ -2,8 +2,8 @@ package com.comspare.returns;
 
 import com.comspare.inventory.Part;
 import com.comspare.inventory.PartService;
-import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -13,144 +13,227 @@ public class ReturnRequestService {
     private final ReturnRequestRepository returnRequestRepository;
     private final PartService partService;
 
-    public ReturnRequestService(ReturnRequestRepository returnRequestRepository,
-                                PartService partService) {
+    public ReturnRequestService(
+            ReturnRequestRepository returnRequestRepository,
+            PartService partService) {
+
         this.returnRequestRepository = returnRequestRepository;
         this.partService = partService;
     }
+
+    // ================= CREATE =================
+
+    @Transactional
+    public ReturnRequest createReturnRequest(ReturnRequest request) {
+
+        if (request.getQuantity() == null || request.getQuantity() <= 0) {
+            throw new IllegalArgumentException(
+                    "Quantity must be greater than zero.");
+        }
+
+        if (request.getPart() == null || request.getPart().getId() == null) {
+            throw new IllegalArgumentException(
+                    "A spare part must be selected.");
+        }
+
+        Part part = partService.getPartById(request.getPart().getId())
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Selected part was not found."));
+
+        request.setPart(part);
+        request.setStatus("PENDING");
+        request.setInventoryProcessed(false);
+
+        return returnRequestRepository.save(request);
+    }
+
+    // ================= READ =================
 
     public List<ReturnRequest> getAllReturns() {
         return returnRequestRepository.findAllByOrderByCreatedAtDesc();
     }
 
-    public List<ReturnRequest> searchReturns(String term) {
-        if (term == null || term.isBlank()) {
-            return getAllReturns();
-        }
-        return returnRequestRepository.search(term.trim());
-    }
-
-    public ReturnRequest getById(Long id) {
+    public ReturnRequest getReturnById(Long id) {
         return returnRequestRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Return request not found with id: " + id));
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Return request not found with id: " + id));
     }
 
-    public List<Part> getParts() {
-        return partService.getAllParts();
+    public List<ReturnRequest> searchReturns(
+            String search,
+            String status,
+            String claimType) {
+
+        List<ReturnRequest> returns =
+                returnRequestRepository.findAllByOrderByCreatedAtDesc();
+
+        return returns.stream()
+                .filter(r ->
+                        search == null ||
+                        search.isBlank() ||
+                        r.getCustomerName()
+                                .toLowerCase()
+                                .contains(search.toLowerCase()) ||
+                        r.getCustomerContact()
+                                .toLowerCase()
+                                .contains(search.toLowerCase()))
+                .filter(r ->
+                        status == null ||
+                        status.isBlank() ||
+                        status.equals(r.getStatus()))
+                .filter(r ->
+                        claimType == null ||
+                        claimType.isBlank() ||
+                        claimType.equals(r.getClaimType()))
+                .toList();
     }
+
+    // ================= UPDATE =================
 
     @Transactional
-    public ReturnRequest create(ReturnRequest request, Long partId) {
-        Part part = partService.getPartById(partId)
-            .orElseThrow(() -> new IllegalArgumentException("Selected spare part was not found."));
+    public ReturnRequest updateReturnRequest(
+            Long id,
+            ReturnRequest updated) {
 
-        validateQuantity(request.getQuantity());
-        request.setPart(part);
-        request.setStatus(ReturnRequest.ReturnStatus.PENDING);
-        request.setInventoryProcessed(false);
-        return returnRequestRepository.save(request);
-    }
+        ReturnRequest existing = getReturnById(id);
 
-    @Transactional
-    public ReturnRequest update(Long id, ReturnRequest incoming, Long partId) {
-        ReturnRequest existing = getById(id);
-
-        if (existing.getStatus() != ReturnRequest.ReturnStatus.PENDING) {
-            throw new IllegalStateException("Only pending return requests can be edited.");
+        if (!"PENDING".equals(existing.getStatus())) {
+            throw new IllegalStateException(
+                    "Only pending return requests can be edited.");
         }
 
-        Part part = partService.getPartById(partId)
-            .orElseThrow(() -> new IllegalArgumentException("Selected spare part was not found."));
+        if (updated.getQuantity() == null ||
+                updated.getQuantity() <= 0) {
 
-        validateQuantity(incoming.getQuantity());
+            throw new IllegalArgumentException(
+                    "Quantity must be greater than zero.");
+        }
 
-        existing.setCustomerName(incoming.getCustomerName());
-        existing.setCustomerContact(incoming.getCustomerContact());
+        Part part = partService.getPartById(
+                        updated.getPart().getId())
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Selected part was not found."));
+
+        existing.setCustomerName(updated.getCustomerName());
+        existing.setCustomerContact(updated.getCustomerContact());
         existing.setPart(part);
-        existing.setQuantity(incoming.getQuantity());
-        existing.setReturnReason(incoming.getReturnReason());
-        existing.setClaimType(incoming.getClaimType());
-        existing.setResolution(incoming.getResolution());
+        existing.setQuantity(updated.getQuantity());
+        existing.setReturnReason(updated.getReturnReason());
+        existing.setClaimType(updated.getClaimType());
+        existing.setResolution(updated.getResolution());
+
         return returnRequestRepository.save(existing);
     }
 
+    // ================= DELETE =================
+
     @Transactional
-    public void delete(Long id) {
-        ReturnRequest request = getById(id);
-        if (request.getStatus() == ReturnRequest.ReturnStatus.APPROVED) {
-            throw new IllegalStateException("Approved return requests cannot be deleted.");
+    public void deleteReturnRequest(Long id) {
+
+        ReturnRequest existing = getReturnById(id);
+
+        if (!"PENDING".equals(existing.getStatus())) {
+            throw new IllegalStateException(
+                    "Only pending return requests can be deleted.");
         }
-        returnRequestRepository.delete(request);
+
+        returnRequestRepository.delete(existing);
     }
 
+    // ================= APPROVE =================
+
     @Transactional
-    public ReturnRequest approve(Long id, String notes) {
-        ReturnRequest request = getById(id);
+    public ReturnRequest approveReturn(
+            Long id,
+            String decisionNotes) {
 
-        if (request.getStatus() != ReturnRequest.ReturnStatus.PENDING) {
-            throw new IllegalStateException("Only pending requests can be approved.");
+        ReturnRequest request = getReturnById(id);
+
+        if (!"PENDING".equals(request.getStatus())) {
+            throw new IllegalStateException(
+                    "Only pending claims can be approved.");
         }
 
-        if (request.getResolution() == null) {
-            throw new IllegalStateException("Select a resolution before approving the request.");
-        }
+        request.setStatus("APPROVED");
+        request.setDecisionNotes(decisionNotes);
 
-        // The existing inventory module provides the agreed cross-module method.
-        // For defective returns, remove the returned quantity from usable stock
-        // and record the DAMAGED event in part history.
-        if (isDefectiveReason(request.getReturnReason())) {
-            if (request.getPart().getStockQuantity() < request.getQuantity()) {
-                throw new IllegalStateException(
-                    "Insufficient stock to process this defective return. Available: "
-                        + request.getPart().getStockQuantity()
-                        + ", requested: " + request.getQuantity());
-            }
+        /*
+         * Integration with the existing Inventory module.
+         *
+         * If the returned item is defective/damaged,
+         * update inventory through PartService.
+         */
+        String reason = request.getReturnReason();
+
+        if (isDefectiveReason(reason)) {
+
             partService.markAsDamagedFromReturn(
-                request.getPart().getId(),
-                request.getQuantity(),
-                request.getReturnReason());
+                    request.getPart().getId(),
+                    request.getQuantity(),
+                    reason
+            );
+
             request.setInventoryProcessed(true);
         }
 
-        request.setStatus(ReturnRequest.ReturnStatus.APPROVED);
-        request.setDecisionNotes(cleanNotes(notes));
         return returnRequestRepository.save(request);
     }
+
+    // ================= REJECT =================
 
     @Transactional
-    public ReturnRequest reject(Long id, String notes) {
-        ReturnRequest request = getById(id);
-        if (request.getStatus() != ReturnRequest.ReturnStatus.PENDING) {
-            throw new IllegalStateException("Only pending requests can be rejected.");
+    public ReturnRequest rejectReturn(
+            Long id,
+            String decisionNotes) {
+
+        ReturnRequest request = getReturnById(id);
+
+        if (!"PENDING".equals(request.getStatus())) {
+            throw new IllegalStateException(
+                    "Only pending claims can be rejected.");
         }
-        request.setStatus(ReturnRequest.ReturnStatus.REJECTED);
-        request.setDecisionNotes(cleanNotes(notes));
+
+        request.setStatus("REJECTED");
+        request.setDecisionNotes(decisionNotes);
+
         return returnRequestRepository.save(request);
     }
+
+    // ================= CANCEL =================
 
     @Transactional
-    public ReturnRequest cancel(Long id) {
-        ReturnRequest request = getById(id);
-        if (request.getStatus() != ReturnRequest.ReturnStatus.PENDING) {
-            throw new IllegalStateException("Only pending requests can be cancelled.");
+    public ReturnRequest cancelReturn(Long id) {
+
+        ReturnRequest request = getReturnById(id);
+
+        if ("COMPLETED".equals(request.getStatus()) ||
+                "REJECTED".equals(request.getStatus())) {
+
+            throw new IllegalStateException(
+                    "This claim cannot be cancelled.");
         }
-        request.setStatus(ReturnRequest.ReturnStatus.CANCELLED);
+
+        request.setStatus("CANCELLED");
+
         return returnRequestRepository.save(request);
     }
 
-    private void validateQuantity(Integer quantity) {
-        if (quantity == null || quantity < 1) {
-            throw new IllegalArgumentException("Quantity must be at least 1.");
-        }
-    }
+    // ================= HELPER =================
 
     private boolean isDefectiveReason(String reason) {
-        if (reason == null) return false;
-        String value = reason.toLowerCase();
-        return value.contains("defective") || value.contains("damaged") || value.contains("faulty");
-    }
 
-    private String cleanNotes(String notes) {
-        return notes == null || notes.isBlank() ? null : notes.trim();
+        if (reason == null) {
+            return false;
+        }
+
+        String value = reason.toLowerCase();
+
+        return value.contains("defect")
+                || value.contains("damage")
+                || value.contains("broken")
+                || value.contains("not working")
+                || value.contains("fault");
     }
 }
