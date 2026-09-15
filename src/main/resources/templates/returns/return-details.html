@@ -1,110 +1,190 @@
+```html
 <!DOCTYPE html>
 <html lang="en"
       xmlns:th="http://www.thymeleaf.org"
       th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
 
 <head>
+
     <title>Return Claim Details</title>
+
 </head>
 
 <body>
 
 <section>
 
-    <div class="d-flex justify-content-between mb-4">
+    <!-- HEADER -->
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
 
         <div>
-            <h2>Return Claim Details</h2>
+
+            <h2>
+                Return Claim Details
+            </h2>
+
             <p class="text-muted">
-                Claim #<span th:text="${returnRequest.id}">1</span>
+
+                Claim #
+                <span th:text="${returnRequest.id}">
+                    1
+                </span>
+
             </p>
+
         </div>
+
 
         <a th:href="@{/returns}"
            class="btn btn-secondary">
-            Back
+
+            Back to Claims
+
         </a>
 
     </div>
+
+
+    <!-- SUCCESS -->
 
     <div th:if="${successMessage}"
          class="alert alert-success"
          th:text="${successMessage}">
     </div>
 
+
+    <!-- ERROR -->
+
     <div th:if="${errorMessage}"
          class="alert alert-danger"
          th:text="${errorMessage}">
     </div>
 
+
+    <!-- DETAILS -->
+
     <div class="card">
+
+        <div class="card-header">
+
+            <h5 class="mb-0">
+                Claim Information
+            </h5>
+
+        </div>
+
 
         <div class="card-body">
 
-            <div class="row g-3">
+            <div class="row g-4">
+
 
                 <div class="col-md-6">
-                    <strong>Customer</strong>
+
+                    <strong>Customer Name</strong>
+
                     <p th:text="${returnRequest.customerName}">
                         Customer
                     </p>
+
                 </div>
 
+
                 <div class="col-md-6">
-                    <strong>Contact</strong>
+
+                    <strong>Customer Contact</strong>
+
                     <p th:text="${returnRequest.customerContact}">
                         Contact
                     </p>
+
                 </div>
 
+
                 <div class="col-md-6">
-                    <strong>Part</strong>
+
+                    <strong>Spare Part</strong>
+
                     <p th:text="${returnRequest.part.name}">
-                        Part
+                        Keyboard
                     </p>
+
                 </div>
 
+
                 <div class="col-md-6">
+
                     <strong>Quantity</strong>
+
                     <p th:text="${returnRequest.quantity}">
                         1
                     </p>
+
                 </div>
 
+
                 <div class="col-md-6">
+
                     <strong>Claim Type</strong>
+
                     <p th:text="${returnRequest.claimType}">
                         WARRANTY
                     </p>
+
                 </div>
+
 
                 <div class="col-md-6">
+
                     <strong>Status</strong>
-                    <p th:text="${returnRequest.status}">
-                        PENDING
+
+                    <p>
+
+                        <span th:text="${returnRequest.status}"
+                              class="badge bg-warning text-dark">
+
+                            PENDING
+
+                        </span>
+
                     </p>
+
                 </div>
 
+
                 <div class="col-12">
-                    <strong>Reason</strong>
+
+                    <strong>Return Reason</strong>
+
                     <p th:text="${returnRequest.returnReason}">
                         Reason
                     </p>
+
                 </div>
 
+
                 <div class="col-md-6">
+
                     <strong>Resolution</strong>
+
                     <p th:text="${returnRequest.resolution}">
                         REPLACEMENT
                     </p>
+
                 </div>
 
+
                 <div class="col-md-6">
+
                     <strong>Inventory Processed</strong>
+
                     <p th:text="${returnRequest.inventoryProcessed}">
                         false
                     </p>
+
                 </div>
+
 
                 <div class="col-12"
                      th:if="${returnRequest.decisionNotes != null}">
@@ -119,49 +199,78 @@
 
             </div>
 
-            <hr>
+        </div>
 
-            <!-- Approve -->
 
-            <div th:if="${returnRequest.status == 'PENDING'}">
+        <!-- ACTIONS -->
 
-                <form th:action="@{/returns/approve/{id}(id=${returnRequest.id})}"
-                      method="post"
-                      class="mb-2">
+        <div class="card-footer"
+             th:if="${returnRequest.status == 'PENDING'}">
 
-                    <label class="form-label">
-                        Decision Notes
-                    </label>
 
-                    <textarea name="decisionNotes"
-                              class="form-control mb-2"
-                              placeholder="Optional decision notes">
-                    </textarea>
+            <!-- APPROVE -->
 
-                    <button class="btn btn-success">
-                        Approve Claim
-                    </button>
+            <form th:action="@{/returns/approve/{id}
+                         (id=${returnRequest.id})}"
+                  method="post"
+                  class="d-inline">
 
-                </form>
+                <input type="text"
+                       name="decisionNotes"
+                       class="form-control mb-2"
+                       placeholder="Decision notes">
 
-                <form th:action="@{/returns/reject/{id}(id=${returnRequest.id})}"
-                      method="post">
+                <button type="submit"
+                        class="btn btn-success">
 
-                    <input type="hidden"
-                           name="decisionNotes"
-                           value="Claim rejected after review">
+                    Approve Claim
 
-                    <button class="btn btn-danger">
-                        Reject Claim
-                    </button>
+                </button>
 
-                </form>
+            </form>
 
-            </div>
+
+            <!-- REJECT -->
+
+            <form th:action="@{/returns/reject/{id}
+                         (id=${returnRequest.id})}"
+                  method="post"
+                  class="d-inline">
+
+                <input type="hidden"
+                       name="decisionNotes"
+                       value="Claim rejected after review">
+
+                <button type="submit"
+                        class="btn btn-danger">
+
+                    Reject Claim
+
+                </button>
+
+            </form>
+
+
+            <!-- EDIT -->
+
+            <a th:href="@{/returns/edit/{id}
+                      (id=${returnRequest.id})}"
+               class="btn btn-warning">
+
+                Edit
+
+            </a>
 
         </div>
 
     </div>
+
+</section>
+
+</body>
+</html>
+```
+
 
 </section>
 
