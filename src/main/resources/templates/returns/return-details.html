@@ -1,82 +1,272 @@
-<html xmlns:th="http://www.thymeleaf.org"
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
       th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
-<head><title>Return Details</title></head>
+
+<head>
+    <title>Returns & Warranty Claims</title>
+</head>
+
 <body>
+
 <section>
-    <div class="d-flex justify-content-between align-items-center mb-3">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
         <div>
-            <h2 th:text="'Return / Warranty Claim #' + ${returnRequest.id}"></h2>
-            <p class="text-muted mb-0" th:text="${#temporals.format(returnRequest.createdAt, 'yyyy-MM-dd HH:mm')}"></p>
+            <h2>Returns & Warranty Claims</h2>
+            <p class="text-muted">
+                Manage customer return and warranty requests.
+            </p>
         </div>
-        <a th:href="@{/returns}" class="btn btn-outline-secondary">Back to Claims</a>
+
+        <a th:href="@{/returns/new}"
+           class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>
+            New Claim
+        </a>
+
     </div>
 
-    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
-    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
-
-    <div class="row g-3">
-        <div class="col-lg-8">
-            <div class="card mb-3">
-                <div class="card-header">Claim Information</div>
-                <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-md-6"><strong>Customer:</strong><br><span th:text="${returnRequest.customerName}"></span></div>
-                        <div class="col-md-6"><strong>Contact:</strong><br><span th:text="${returnRequest.customerContact}"></span></div>
-                        <div class="col-md-6"><strong>Part:</strong><br><span th:text="${returnRequest.part.productCode + ' - ' + returnRequest.part.name}"></span></div>
-                        <div class="col-md-3"><strong>Quantity:</strong><br><span th:text="${returnRequest.quantity}"></span></div>
-                        <div class="col-md-3"><strong>Type:</strong><br><span th:text="${returnRequest.claimType}"></span></div>
-                        <div class="col-12"><strong>Reason:</strong><br><span th:text="${returnRequest.returnReason}"></span></div>
-                        <div class="col-md-6"><strong>Resolution:</strong><br><span th:text="${returnRequest.resolution ?: 'Not selected'}"></span></div>
-                        <div class="col-md-6"><strong>Inventory processed:</strong><br><span th:text="${returnRequest.inventoryProcessed ? 'Yes' : 'No'}"></span></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card" th:if="${returnRequest.decisionNotes != null}">
-                <div class="card-header">Decision Notes</div>
-                <div class="card-body" th:text="${returnRequest.decisionNotes}"></div>
-            </div>
-        </div>
-
-        <div class="col-lg-4">
-            <div class="card mb-3">
-                <div class="card-header">Current Status</div>
-                <div class="card-body">
-                    <span th:if="${returnRequest.status.name() == 'PENDING'}" class="badge badge-pending fs-6">Pending</span>
-                    <span th:if="${returnRequest.status.name() == 'APPROVED'}" class="badge badge-approved fs-6">Approved</span>
-                    <span th:if="${returnRequest.status.name() == 'REJECTED'}" class="badge badge-rejected fs-6">Rejected</span>
-                    <span th:if="${returnRequest.status.name() == 'CANCELLED'}" class="badge bg-secondary fs-6">Cancelled</span>
-                </div>
-            </div>
-
-            <div class="card" th:if="${returnRequest.status.name() == 'PENDING'}">
-                <div class="card-header">Process Claim</div>
-                <div class="card-body">
-                    <form th:action="@{/returns/{id}/approve(id=${returnRequest.id})}" method="post" class="mb-3">
-                        <label class="form-label">Approval Notes</label>
-                        <textarea name="notes" class="form-control mb-2" rows="3" placeholder="Optional decision notes"></textarea>
-                        <button type="submit" class="btn btn-success w-100" onclick="return confirm('Approve this claim?');">
-                            <i class="bi bi-check-circle"></i> Approve Claim
-                        </button>
-                    </form>
-
-                    <form th:action="@{/returns/{id}/reject(id=${returnRequest.id})}" method="post" class="mb-3">
-                        <label class="form-label">Rejection Notes</label>
-                        <textarea name="notes" class="form-control mb-2" rows="3" placeholder="Reason for rejection"></textarea>
-                        <button type="submit" class="btn btn-outline-danger w-100" onclick="return confirm('Reject this claim?');">
-                            <i class="bi bi-x-circle"></i> Reject Claim
-                        </button>
-                    </form>
-
-                    <form th:action="@{/returns/{id}/cancel(id=${returnRequest.id})}" method="post">
-                        <button type="submit" class="btn btn-outline-secondary w-100" onclick="return confirm('Cancel this claim?');">
-                            Cancel Claim
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
+    <!-- Success message -->
+    <div th:if="${successMessage}"
+         class="alert alert-success"
+         th:text="${successMessage}">
     </div>
+
+    <!-- Error message -->
+    <div th:if="${errorMessage}"
+         class="alert alert-danger"
+         th:text="${errorMessage}">
+    </div>
+
+    <!-- Search -->
+    <form method="get"
+          th:action="@{/returns}"
+          class="card card-body mb-4">
+
+        <div class="row g-3">
+
+            <div class="col-md-4">
+
+                <label class="form-label">
+                    Search customer
+                </label>
+
+                <input type="text"
+                       name="search"
+                       th:value="${search}"
+                       class="form-control"
+                       placeholder="Customer name/contact">
+
+            </div>
+
+            <div class="col-md-3">
+
+                <label class="form-label">
+                    Status
+                </label>
+
+                <select name="status"
+                        class="form-select">
+
+                    <option value="">All statuses</option>
+
+                    <option value="PENDING"
+                            th:selected="${status == 'PENDING'}">
+                        Pending
+                    </option>
+
+                    <option value="APPROVED"
+                            th:selected="${status == 'APPROVED'}">
+                        Approved
+                    </option>
+
+                    <option value="REJECTED"
+                            th:selected="${status == 'REJECTED'}">
+                        Rejected
+                    </option>
+
+                    <option value="CANCELLED"
+                            th:selected="${status == 'CANCELLED'}">
+                        Cancelled
+                    </option>
+
+                </select>
+
+            </div>
+
+            <div class="col-md-3">
+
+                <label class="form-label">
+                    Claim type
+                </label>
+
+                <select name="claimType"
+                        class="form-select">
+
+                    <option value="">All types</option>
+
+                    <option value="RETURN"
+                            th:selected="${claimType == 'RETURN'}">
+                        Return
+                    </option>
+
+                    <option value="WARRANTY"
+                            th:selected="${claimType == 'WARRANTY'}">
+                        Warranty
+                    </option>
+
+                </select>
+
+            </div>
+
+            <div class="col-md-2 d-flex align-items-end">
+
+                <button class="btn btn-outline-primary w-100">
+                    Search
+                </button>
+
+            </div>
+
+        </div>
+
+    </form>
+
+    <!-- Claims table -->
+
+    <div class="card">
+
+        <div class="table-responsive">
+
+            <table class="table table-hover mb-0">
+
+                <thead>
+
+                <tr>
+                    <th>ID</th>
+                    <th>Customer</th>
+                    <th>Part</th>
+                    <th>Qty</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+
+                </thead>
+
+                <tbody>
+
+                <tr th:each="r : ${returns}">
+
+                    <td th:text="${r.id}">
+                        1
+                    </td>
+
+                    <td>
+                        <strong th:text="${r.customerName}">
+                            Customer
+                        </strong>
+
+                        <br>
+
+                        <small class="text-muted"
+                               th:text="${r.customerContact}">
+                            Contact
+                        </small>
+                    </td>
+
+                    <td th:text="${r.part.name}">
+                        Keyboard
+                    </td>
+
+                    <td th:text="${r.quantity}">
+                        1
+                    </td>
+
+                    <td th:text="${r.claimType}">
+                        WARRANTY
+                    </td>
+
+                    <td>
+
+                        <span class="badge bg-warning text-dark"
+                              th:if="${r.status == 'PENDING'}">
+                            PENDING
+                        </span>
+
+                        <span class="badge bg-success"
+                              th:if="${r.status == 'APPROVED'}">
+                            APPROVED
+                        </span>
+
+                        <span class="badge bg-danger"
+                              th:if="${r.status == 'REJECTED'}">
+                            REJECTED
+                        </span>
+
+                        <span class="badge bg-secondary"
+                              th:if="${r.status == 'CANCELLED'}">
+                            CANCELLED
+                        </span>
+
+                    </td>
+
+                    <td th:text="${#temporals.format(r.createdAt, 'yyyy-MM-dd HH:mm')}">
+                        Date
+                    </td>
+
+                    <td>
+
+                        <a th:href="@{/returns/view/{id}(id=${r.id})}"
+                           class="btn btn-sm btn-outline-primary">
+                            View
+                        </a>
+
+                        <a th:if="${r.status == 'PENDING'}"
+                           th:href="@{/returns/edit/{id}(id=${r.id})}"
+                           class="btn btn-sm btn-outline-secondary">
+                            Edit
+                        </a>
+
+                        <form th:if="${r.status == 'PENDING'}"
+                              th:action="@{/returns/delete/{id}(id=${r.id})}"
+                              method="post"
+                              class="d-inline">
+
+                            <button type="submit"
+                                    class="btn btn-sm btn-outline-danger"
+                                    onclick="return confirm('Delete this claim?');">
+                                Delete
+                            </button>
+
+                        </form>
+
+                    </td>
+
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(returns)}">
+
+                    <td colspan="8"
+                        class="text-center py-4 text-muted">
+
+                        No return or warranty claims found.
+
+                    </td>
+
+                </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
 </section>
+
 </body>
 </html>
