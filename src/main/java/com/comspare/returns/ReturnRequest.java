@@ -2,9 +2,9 @@ package com.comspare.returns;
 
 import com.comspare.inventory.Part;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -30,12 +30,13 @@ public class ReturnRequest {
     @Column(name = "customer_contact", nullable = false, length = 100)
     private String customerContact;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @NotNull(message = "Please select a spare part")
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "part_id", nullable = false)
     private Part part;
 
     @NotNull(message = "Quantity is required")
-    @Min(value = 1, message = "Quantity must be at least 1")
+    @Positive(message = "Quantity must be greater than zero")
     @Column(nullable = false)
     private Integer quantity;
 
@@ -43,25 +44,21 @@ public class ReturnRequest {
     @Column(name = "return_reason", nullable = false, length = 500)
     private String returnReason;
 
-    @NotNull(message = "Claim type is required")
-    @Enumerated(EnumType.STRING)
+    @NotBlank(message = "Claim type is required")
     @Column(name = "claim_type", nullable = false, length = 20)
-    private ClaimType claimType = ClaimType.RETURN;
+    private String claimType = "RETURN";
 
-    @NotNull(message = "Status is required")
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private ReturnStatus status = ReturnStatus.PENDING;
+    private String status = "PENDING";
 
-    @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    private Resolution resolution;
+    private String resolution;
 
     @Column(name = "decision_notes", length = 500)
     private String decisionNotes;
 
     @Column(name = "inventory_processed", nullable = false)
-    private boolean inventoryProcessed = false;
+    private Boolean inventoryProcessed = false;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -71,25 +68,20 @@ public class ReturnRequest {
 
     @PrePersist
     protected void onCreate() {
-        LocalDateTime now = LocalDateTime.now();
-        createdAt = now;
-        updatedAt = now;
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+
+        if (status == null) {
+            status = "PENDING";
+        }
+
+        if (inventoryProcessed == null) {
+            inventoryProcessed = false;
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
-    }
-
-    public enum ClaimType {
-        RETURN, WARRANTY
-    }
-
-    public enum ReturnStatus {
-        PENDING, APPROVED, REJECTED, CANCELLED
-    }
-
-    public enum Resolution {
-        REFUND, REPLACEMENT, REPAIR, STORE_CREDIT
     }
 }
