@@ -1,0 +1,336 @@
+```html
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
+
+<head>
+    <title>Returns & Warranty Claims</title>
+</head>
+
+<body>
+
+<section>
+
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+            <h2>Returns & Warranty Claims</h2>
+            <p class="text-muted">
+                Manage customer returns and warranty claims
+            </p>
+        </div>
+
+        <!-- CREATE -->
+        <a th:href="@{/returns/new}"
+           class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i>
+            New Claim
+        </a>
+
+    </div>
+
+
+    <!-- SUCCESS MESSAGE -->
+    <div th:if="${successMessage}"
+         class="alert alert-success"
+         th:text="${successMessage}">
+    </div>
+
+
+    <!-- ERROR MESSAGE -->
+    <div th:if="${errorMessage}"
+         class="alert alert-danger"
+         th:text="${errorMessage}">
+    </div>
+
+
+    <!-- SEARCH / FILTER -->
+    <div class="card mb-4">
+
+        <div class="card-body">
+
+            <form method="get"
+                  th:action="@{/returns}">
+
+                <div class="row g-3">
+
+                    <!-- SEARCH -->
+                    <div class="col-md-5">
+
+                        <label class="form-label">
+                            Search Customer
+                        </label>
+
+                        <input type="text"
+                               name="search"
+                               th:value="${search}"
+                               class="form-control"
+                               placeholder="Enter customer name or contact">
+
+                    </div>
+
+
+                    <!-- STATUS -->
+                    <div class="col-md-3">
+
+                        <label class="form-label">
+                            Status
+                        </label>
+
+                        <select name="status"
+                                class="form-select">
+
+                            <option value="">
+                                All Statuses
+                            </option>
+
+                            <option value="PENDING"
+                                    th:selected="${status == 'PENDING'}">
+                                Pending
+                            </option>
+
+                            <option value="APPROVED"
+                                    th:selected="${status == 'APPROVED'}">
+                                Approved
+                            </option>
+
+                            <option value="REJECTED"
+                                    th:selected="${status == 'REJECTED'}">
+                                Rejected
+                            </option>
+
+                            <option value="CANCELLED"
+                                    th:selected="${status == 'CANCELLED'}">
+                                Cancelled
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- SEARCH BUTTON -->
+                    <div class="col-md-2 d-flex align-items-end">
+
+                        <button type="submit"
+                                class="btn btn-outline-primary w-100">
+                            Search
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- CLAIM TABLE -->
+
+    <div class="card">
+
+        <div class="card-header">
+            <h5 class="mb-0">
+                Return / Warranty Claims
+            </h5>
+        </div>
+
+
+        <div class="table-responsive">
+
+            <table class="table table-hover mb-0">
+
+                <thead>
+
+                <tr>
+
+                    <th>ID</th>
+
+                    <th>Customer</th>
+
+                    <th>Part</th>
+
+                    <th>Quantity</th>
+
+                    <th>Type</th>
+
+                    <th>Status</th>
+
+                    <th>Actions</th>
+
+                </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                <!-- READ -->
+
+                <tr th:each="r : ${returns}">
+
+                    <!-- ID -->
+                    <td th:text="${r.id}">
+                        1
+                    </td>
+
+
+                    <!-- CUSTOMER -->
+
+                    <td>
+
+                        <strong th:text="${r.customerName}">
+                            Customer
+                        </strong>
+
+                        <br>
+
+                        <small class="text-muted"
+                               th:text="${r.customerContact}">
+                            Contact
+                        </small>
+
+                    </td>
+
+
+                    <!-- PART -->
+
+                    <td th:text="${r.part.name}">
+                        Keyboard
+                    </td>
+
+
+                    <!-- QUANTITY -->
+
+                    <td th:text="${r.quantity}">
+                        1
+                    </td>
+
+
+                    <!-- CLAIM TYPE -->
+
+                    <td>
+
+                        <span class="badge bg-info"
+                              th:text="${r.claimType}">
+                            WARRANTY
+                        </span>
+
+                    </td>
+
+
+                    <!-- STATUS -->
+
+                    <td>
+
+                        <span th:if="${r.status == 'PENDING'}"
+                              class="badge bg-warning text-dark">
+                            PENDING
+                        </span>
+
+                        <span th:if="${r.status == 'APPROVED'}"
+                              class="badge bg-success">
+                            APPROVED
+                        </span>
+
+                        <span th:if="${r.status == 'REJECTED'}"
+                              class="badge bg-danger">
+                            REJECTED
+                        </span>
+
+                        <span th:if="${r.status == 'CANCELLED'}"
+                              class="badge bg-secondary">
+                            CANCELLED
+                        </span>
+
+                    </td>
+
+
+                    <!-- ACTIONS -->
+
+                    <td>
+
+                        <!-- READ / VIEW -->
+
+                        <a th:href="@{/returns/view/{id}(id=${r.id})}"
+                           class="btn btn-sm btn-outline-primary">
+                            View
+                        </a>
+
+
+                        <!-- UPDATE -->
+
+                        <a th:if="${r.status == 'PENDING'}"
+                           th:href="@{/returns/edit/{id}(id=${r.id})}"
+                           class="btn btn-sm btn-outline-warning">
+                            Edit
+                        </a>
+
+
+                        <!-- DELETE -->
+
+                        <form th:if="${r.status == 'PENDING'}"
+                              th:action="@{/returns/delete/{id}(id=${r.id})}"
+                              method="post"
+                              class="d-inline">
+
+                            <button type="submit"
+                                    class="btn btn-sm btn-outline-danger"
+                                    onclick="return confirm(
+                                    'Are you sure you want to delete this claim?'
+                                    );">
+
+                                Delete
+
+                            </button>
+
+                        </form>
+
+                    </td>
+
+                </tr>
+
+
+                <!-- EMPTY -->
+
+                <tr th:if="${#lists.isEmpty(returns)}">
+
+                    <td colspan="7"
+                        class="text-center py-5">
+
+                        <h5>No return claims found</h5>
+
+                        <p class="text-muted">
+                            Create your first return or warranty claim.
+                        </p>
+
+                        <a th:href="@{/returns/new}"
+                           class="btn btn-primary">
+
+                            + New Claim
+
+                        </a>
+
+                    </td>
+
+                </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</section>
+
+</body>
+</html>
+```
+

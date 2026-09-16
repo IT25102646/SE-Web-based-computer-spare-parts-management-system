@@ -1,0 +1,263 @@
+```html
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
+
+<head>
+
+    <title th:text="${pageTitle}">
+        Return Claim
+    </title>
+
+</head>
+
+<body>
+
+<section>
+
+    <!-- PAGE HEADER -->
+
+    <div class="mb-4">
+
+        <h2 th:text="${pageTitle}">
+            Create Return Claim
+        </h2>
+
+        <p class="text-muted">
+            Enter the return or warranty claim information.
+        </p>
+
+    </div>
+
+
+    <!-- ERROR -->
+
+    <div th:if="${errorMessage}"
+         class="alert alert-danger"
+         th:text="${errorMessage}">
+    </div>
+
+
+    <!-- FORM -->
+
+    <form th:object="${returnRequest}"
+          th:action="${returnRequest.id == null}
+                     ? @{/returns/save}
+                     : @{/returns/update/{id}(id=${returnRequest.id})}"
+          method="post"
+          class="card">
+
+        <div class="card-body">
+
+            <div class="row g-4">
+
+
+                <!-- CUSTOMER NAME -->
+
+                <div class="col-md-6">
+
+                    <label class="form-label">
+                        Customer Name *
+                    </label>
+
+                    <input type="text"
+                           th:field="*{customerName}"
+                           class="form-control"
+                           placeholder="Enter customer name">
+
+                    <div class="text-danger"
+                         th:errors="*{customerName}">
+                    </div>
+
+                </div>
+
+
+                <!-- CUSTOMER CONTACT -->
+
+                <div class="col-md-6">
+
+                    <label class="form-label">
+                        Customer Contact *
+                    </label>
+
+                    <input type="text"
+                           th:field="*{customerContact}"
+                           class="form-control"
+                           placeholder="0771234567">
+
+                    <div class="text-danger"
+                         th:errors="*{customerContact}">
+                    </div>
+
+                </div>
+
+
+                <!-- PART -->
+
+                <div class="col-md-6">
+
+                    <label class="form-label">
+                        Spare Part *
+                    </label>
+
+                    <select th:field="*{part.id}"
+                            class="form-select">
+
+                        <option value="">
+                            -- Select Spare Part --
+                        </option>
+
+                        <option th:each="p : ${parts}"
+                                th:value="${p.id}"
+                                th:text="${p.productCode + ' - ' + p.name}">
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- QUANTITY -->
+
+                <div class="col-md-6">
+
+                    <label class="form-label">
+                        Quantity *
+                    </label>
+
+                    <input type="number"
+                           th:field="*{quantity}"
+                           min="1"
+                           class="form-control">
+
+                    <div class="text-danger"
+                         th:errors="*{quantity}">
+                    </div>
+
+                </div>
+
+
+                <!-- CLAIM TYPE -->
+
+                <div class="col-md-6">
+
+                    <label class="form-label">
+                        Claim Type *
+                    </label>
+
+                    <select th:field="*{claimType}"
+                            class="form-select">
+
+                        <option value="RETURN">
+                            Product Return
+                        </option>
+
+                        <option value="WARRANTY">
+                            Warranty Claim
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- RESOLUTION -->
+
+                <div class="col-md-6">
+
+                    <label class="form-label">
+                        Preferred Resolution
+                    </label>
+
+                    <select th:field="*{resolution}"
+                            class="form-select">
+
+                        <option value="">
+                            -- Select Resolution --
+                        </option>
+
+                        <option value="REFUND">
+                            Refund
+                        </option>
+
+                        <option value="REPLACEMENT">
+                            Replacement
+                        </option>
+
+                        <option value="REPAIR">
+                            Repair
+                        </option>
+
+                        <option value="STORE_CREDIT">
+                            Store Credit
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- REASON -->
+
+                <div class="col-12">
+
+                    <label class="form-label">
+                        Return / Warranty Reason *
+                    </label>
+
+                    <textarea th:field="*{returnReason}"
+                              class="form-control"
+                              rows="5"
+                              placeholder="Explain the reason for the return...">
+                    </textarea>
+
+                    <div class="text-danger"
+                         th:errors="*{returnReason}">
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- BUTTONS -->
+
+        <div class="card-footer">
+
+            <!-- CREATE / UPDATE -->
+
+            <button type="submit"
+                    class="btn btn-primary">
+
+                <span th:if="${returnRequest.id == null}">
+                    Create Claim
+                </span>
+
+                <span th:unless="${returnRequest.id == null}">
+                    Update Claim
+                </span>
+
+            </button>
+
+
+            <!-- CANCEL -->
+
+            <a th:href="@{/returns}"
+               class="btn btn-secondary">
+
+                Cancel
+
+            </a>
+
+        </div>
+
+    </form>
+
+</section>
+
+</body>
+</html>
+```
