@@ -26,7 +26,12 @@ public class OrderController {
     // View all orders
     @GetMapping
     public String getAllOrders(Model model) {
-        model.addAttribute("orders", orderService.getAllOrders());
+
+        model.addAttribute(
+                "orders",
+                orderService.getAllOrders()
+        );
+
         return "order/orders";
     }
 
@@ -43,6 +48,7 @@ public class OrderController {
 
         // Get available parts from inventory
         List<Part> parts = partRepository.findAll();
+
         model.addAttribute("parts", parts);
 
         return "order/order-form";
@@ -59,6 +65,7 @@ public class OrderController {
 
             // Reload parts if validation fails
             List<Part> parts = partRepository.findAll();
+
             model.addAttribute("parts", parts);
 
             return "order/order-form";
@@ -70,9 +77,13 @@ public class OrderController {
 
         } catch (IllegalArgumentException e) {
 
-            model.addAttribute("errorMessage", e.getMessage());
+            model.addAttribute(
+                    "errorMessage",
+                    e.getMessage()
+            );
 
             List<Part> parts = partRepository.findAll();
+
             model.addAttribute("parts", parts);
 
             return "order/order-form";
@@ -88,13 +99,15 @@ public class OrderController {
             Model model) {
 
         Order order = orderService.getOrderById(id)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Invalid order ID: " + id));
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Invalid order ID: " + id));
 
         model.addAttribute("order", order);
 
         // Load parts for the form
         List<Part> parts = partRepository.findAll();
+
         model.addAttribute("parts", parts);
 
         return "order/order-form";
@@ -119,4 +132,20 @@ public class OrderController {
 
         return "redirect:/orders";
     }
+
+    // View customer's order history
+    @GetMapping("/history")
+    public String getOrderHistory(
+            @RequestParam("email") String customerEmail,
+            Model model) {
+
+        List<Order> orders =
+                orderService.getCustomerOrderHistory(customerEmail);
+
+        model.addAttribute("orders", orders);
+        model.addAttribute("customerEmail", customerEmail);
+
+        return "order/order-history";
+    }
 }
+
