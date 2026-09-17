@@ -1,0 +1,101 @@
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
+<head><title th:text="${reportTitle}">Report</title></head>
+<body>
+<section>
+
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <h2 class="mb-0" th:text="${reportTitle}">Report</h2>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="/reports" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Reports Dashboard
+            </a>
+            <a th:href="@{'/reports/' + ${reportName} + '/pdf'(fromDate=${fromDate}, toDate=${toDate}, category=${category}, status=${param.status})}"
+               class="btn btn-danger">
+                <i class="bi bi-file-earmark-pdf"></i> Export PDF
+            </a>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body text-muted" th:text="${reportDescription}">
+            Report description
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Filters</h5>
+
+            <form method="get" th:action="@{'/reports/' + ${reportName}}" class="row g-3 align-items-end">
+
+                <div class="col-md-3">
+                    <label class="form-label" for="fromDate">From Date</label>
+                    <input type="date" id="fromDate" name="fromDate" class="form-control" th:value="${fromDate}">
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label" for="toDate">To Date</label>
+                    <input type="date" id="toDate" name="toDate" class="form-control" th:value="${toDate}">
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label" for="category">Category</label>
+                    <input type="text" id="category" name="category" class="form-control"
+                           placeholder="All categories" th:value="${category}">
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label" for="status">Status</label>
+                    <select id="status" name="status" class="form-select">
+                        <option value="">All statuses</option>
+                        <option value="PENDING">PENDING</option>
+                        <option value="CONFIRMED">CONFIRMED</option>
+                        <option value="SHIPPED">SHIPPED</option>
+                        <option value="DELIVERED">DELIVERED</option>
+                        <option value="CANCELLED">CANCELLED</option>
+                        <option value="APPROVED">APPROVED</option>
+                        <option value="REJECTED">REJECTED</option>
+                        <option value="PROCESSING">PROCESSING</option>
+                        <option value="COMPLETED">COMPLETED</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Apply</button>
+                    <a th:href="@{'/reports/' + ${reportName}}" class="btn btn-outline-secondary">Clear</a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <p class="text-muted">Records: <strong th:text="${#lists.size(rows)}">0</strong></p>
+
+    <div class="card" th:if="${rows != null and !rows.isEmpty()}">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                <tr>
+                    <th th:each="column : ${rows[0].keySet()}" th:text="${column}">Column</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="row : ${rows}">
+                    <td th:each="column : ${row.keySet()}" th:text="${row[column]}">Value</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card" th:if="${rows == null or rows.isEmpty()}">
+        <div class="card-body text-center text-muted py-5">
+            <h5>No records found</h5>
+            <p class="mb-0">There is no data matching the selected filters.</p>
+        </div>
+    </div>
+
+</section>
+</body>
+</html>

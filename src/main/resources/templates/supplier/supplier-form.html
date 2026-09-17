@@ -1,120 +1,60 @@
-<!DOCTYPE html>
-<html lang="en"
-      xmlns:th="http://www.thymeleaf.org">
-
-<head>
-
-    <meta charset="UTF-8">
-
-    <title>Supplier Form</title>
-
-    <style>
-
-        body {
-            font-family: Arial, sans-serif;
-            background: #f5f7fa;
-            margin: 40px;
-        }
-
-        .container {
-            max-width: 700px;
-            margin: auto;
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-        }
-
-        label {
-            display: block;
-            margin-top: 15px;
-            margin-bottom: 5px;
-        }
-
-        input,
-        textarea,
-        select {
-            width: 100%;
-            padding: 10px;
-            box-sizing: border-box;
-        }
-
-        button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            background: #2563eb;
-            color: white;
-            border: none;
-            border-radius: 5px;
-        }
-
-    </style>
-
-</head>
-
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
+<head><title>Supplier form</title></head>
 <body>
+<section>
 
-<div class="container">
+    <h2 th:text="${supplier.id == null ? 'Add Supplier' : 'Edit Supplier'}">Add Supplier</h2>
 
-    <h1>Supplier</h1>
+    <div class="card" style="max-width:700px;">
+        <div class="card-body">
 
-    <form th:action="@{/suppliers/save}"
-          th:object="${supplier}"
-          method="post">
+            <form th:action="@{/suppliers/save}" th:object="${supplier}" method="post">
 
-        <input type="hidden"
-               th:field="*{id}">
+                <input type="hidden" th:field="*{id}">
 
-        <label>Supplier Name</label>
+                <div class="mb-3">
+                    <label class="form-label">Supplier Name</label>
+                    <input type="text" th:field="*{supplierName}" class="form-control" required>
+                </div>
 
-        <input type="text"
-               th:field="*{supplierName}"
-               required>
+                <div class="mb-3">
+                    <label class="form-label">Contact Person</label>
+                    <input type="text" th:field="*{contactPerson}" class="form-control">
+                </div>
 
-        <label>Contact Person</label>
+                <div class="mb-3">
+                    <label class="form-label">Phone</label>
+                    <input type="text" th:field="*{phone}" class="form-control">
+                </div>
 
-        <input type="text"
-               th:field="*{contactPerson}">
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" th:field="*{email}" class="form-control">
+                </div>
 
-        <label>Phone</label>
+                <div class="mb-3">
+                    <label class="form-label">Address</label>
+                    <textarea th:field="*{address}" class="form-control" rows="3"></textarea>
+                </div>
 
-        <input type="text"
-               th:field="*{phone}">
+                <div class="mb-3">
+                    <label class="form-label">Status</label>
+                    <select th:field="*{status}" class="form-select">
+                        <option value="ACTIVE">Active</option>
+                        <option value="INACTIVE">Inactive</option>
+                    </select>
+                </div>
 
-        <label>Email</label>
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-accent">Save Supplier</button>
+                    <a th:href="@{/suppliers}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
 
-        <input type="email"
-               th:field="*{email}">
+            </form>
+        </div>
+    </div>
 
-        <label>Address</label>
-
-        <textarea th:field="*{address}"
-                  rows="4"></textarea>
-
-        <label>Status</label>
-
-        <select th:field="*{status}">
-
-            <option value="ACTIVE">
-                Active
-            </option>
-
-            <option value="INACTIVE">
-                Inactive
-            </option>
-
-        </select>
-
-        <button type="submit">
-            Save Supplier
-        </button>
-
-        <a th:href="@{/suppliers}">
-            Cancel
-        </a>
-
-    </form>
-
-</div>
-
+</section>
 </body>
 </html>

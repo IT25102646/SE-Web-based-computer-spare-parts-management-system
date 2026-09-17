@@ -1,0 +1,174 @@
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
+<head><title>Reports Dashboard</title></head>
+<body>
+<section>
+
+    <div class="mb-4">
+        <h2 class="mb-1">Reports Dashboard</h2>
+        <p class="text-muted">ComSpare inventory, purchasing, sales and loss reports</p>
+    </div>
+
+    <h5 class="mb-3">Inventory &amp; Purchasing</h5>
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100">
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title">Stock Report</h6>
+                    <p class="card-text text-muted small flex-grow-1">View current stock quantities, reorder levels, prices and stock values.</p>
+                    <a href="/reports/stock" class="btn btn-sm btn-primary align-self-start">Open Report</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100">
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title">Low Stock Report</h6>
+                    <p class="card-text text-muted small flex-grow-1">Identify parts that have reached or fallen below their reorder level.</p>
+                    <a href="/reports/low-stock" class="btn btn-sm btn-primary align-self-start">Open Report</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100">
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title">Out of Stock Report</h6>
+                    <p class="card-text text-muted small flex-grow-1">View all spare parts that currently have zero available stock.</p>
+                    <a href="/reports/out-of-stock" class="btn btn-sm btn-primary align-self-start">Open Report</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100">
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title">Stock Movement</h6>
+                    <p class="card-text text-muted small flex-grow-1">Track received, sold, returned, adjusted and damaged stock movements.</p>
+                    <a href="/reports/movement" class="btn btn-sm btn-primary align-self-start">Open Report</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100">
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title">Inventory Valuation</h6>
+                    <p class="card-text text-muted small flex-grow-1">Calculate the current value of inventory based on quantity and price.</p>
+                    <a href="/reports/valuation" class="btn btn-sm btn-primary align-self-start">Open Report</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100">
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title">Purchase Report</h6>
+                    <p class="card-text text-muted small flex-grow-1">View purchase orders, suppliers, quantities, costs and delivery information.</p>
+                    <a href="/reports/purchases" class="btn btn-sm btn-primary align-self-start">Open Report</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100">
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title">Purchase Expense</h6>
+                    <p class="card-text text-muted small flex-grow-1">Analyse expenditure on purchase orders and received stock.</p>
+                    <a href="/reports/purchase-expense" class="btn btn-sm btn-primary align-self-start">Open Report</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100">
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title">Supplier Performance</h6>
+                    <p class="card-text text-muted small flex-grow-1">Analyse supplier orders, deliveries and fulfillment rates.</p>
+                    <a href="/reports/supplier-performance" class="btn btn-sm btn-primary align-self-start">Open Report</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <h5 class="mb-3">Sales, Returns &amp; Loss</h5>
+    <div class="row g-3">
+
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100">
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title">Sales Report</h6>
+                    <p class="card-text text-muted small flex-grow-1">View sales orders, customers, parts, quantities and sales values.</p>
+                    <a href="/reports/sales" class="btn btn-sm btn-accent align-self-start">Open Report</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100">
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title">Popular Items</h6>
+                    <p class="card-text text-muted small flex-grow-1">Identify parts with the highest quantities sold.</p>
+                    <a href="/reports/popular-items" class="btn btn-sm btn-accent align-self-start">Open Report</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100">
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title">Damaged Items</h6>
+                    <p class="card-text text-muted small flex-grow-1">View stock recorded as damaged and its estimated value.</p>
+                    <a href="/reports/damaged" class="btn btn-sm btn-accent align-self-start">Open Report</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100">
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title">Returned Items</h6>
+                    <p class="card-text text-muted small flex-grow-1">View customer returns, reasons, claims, resolutions and statuses.</p>
+                    <a href="/reports/returned" class="btn btn-sm btn-accent align-self-start">Open Report</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100">
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title">Loss Report</h6>
+                    <p class="card-text text-muted small flex-grow-1">View estimated stock losses based on recorded damaged quantities.</p>
+                    <a href="/reports/loss" class="btn btn-sm btn-accent align-self-start">Open Report</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100">
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title">Monthly Summary</h6>
+                    <p class="card-text text-muted small flex-grow-1">Review monthly order counts, items sold and sales totals.</p>
+                    <a href="/reports/monthly-summary" class="btn btn-sm btn-accent align-self-start">Open Report</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100">
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title">Inventory Status</h6>
+                    <p class="card-text text-muted small flex-grow-1">View whether each part is in stock, low stock or out of stock.</p>
+                    <a href="/reports/inventory-status" class="btn btn-sm btn-primary align-self-start">Open Report</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</section>
+</body>
+</html>
