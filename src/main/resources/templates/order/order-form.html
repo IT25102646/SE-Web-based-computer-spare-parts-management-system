@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
+
+<head>
+    <link rel="stylesheet" th:href="@{/css/theme.css}">
+    <title>Order Form</title>
+</head>
+
+<body>
+
+<section>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 th:text="${order.id == null ? 'Create Order' : 'Edit Order'}">
+            Create Order
+        </h2>
+    </div>
+
+    <!-- Error Message -->
+    <div th:if="${errorMessage}"
+         class="alert alert-danger"
+         th:text="${errorMessage}">
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+
+            <form th:action="@{/orders/save}"
+                  th:object="${order}"
+                  method="post">
+
+                <!-- Order Number -->
+                <div class="mb-3">
+                    <label class="form-label">Order Number</label>
+
+                    <input type="text"
+                           th:field="*{orderNumber}"
+                           class="form-control"
+                           placeholder="Enter order number">
+
+                    <div class="text-danger"
+                         th:if="${#fields.hasErrors('orderNumber')}"
+                         th:errors="*{orderNumber}">
+                    </div>
+                </div>
+
+
+                <!-- Customer Name -->
+                <div class="mb-3">
+                    <label class="form-label">Customer Name</label>
+
+                    <input type="text"
+                           th:field="*{customerName}"
+                           class="form-control"
+                           placeholder="Enter customer name">
+
+                    <div class="text-danger"
+                         th:if="${#fields.hasErrors('customerName')}"
+                         th:errors="*{customerName}">
+                    </div>
+                </div>
+
+
+                <!-- Customer Email -->
+                <div class="mb-3">
+                    <label class="form-label">Customer Email</label>
+
+                    <input type="email"
+                           th:field="*{customerEmail}"
+                           class="form-control"
+                           placeholder="Enter customer email">
+
+                    <div class="text-danger"
+                         th:if="${#fields.hasErrors('customerEmail')}"
+                         th:errors="*{customerEmail}">
+                    </div>
+                </div>
+
+
+                <!-- Order Date -->
+                <div class="mb-3">
+                    <label class="form-label">Order Date</label>
+
+                    <input type="datetime-local"
+                           id="orderDate"
+                           name="orderDate"
+                           class="form-control"
+                           th:value="${order.orderDate != null ? #temporals.format(order.orderDate, 'yyyy-MM-dd''T''HH:mm') : ''}">
+
+                    <div class="text-danger"
+                         th:if="${#fields.hasErrors('orderDate')}"
+                         th:errors="*{orderDate}">
+                    </div>
+                </div>
+
+
+                <!-- SELECT PART -->
+                <div class="card mb-4">
+
+                    <div class="card-header">
+                        <strong>Add Spare Parts</strong>
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="row g-3">
+
+                            <!-- Part -->
+                            <div class="col-md-8">
+
+                                <label class="form-label">
+                                    Select Part
+                                </label>
+
+                                <select id="partSelect"
+                                        class="form-select">
+
+                                    <option value="">
+                                        -- Select a spare part --
+                                    </option>
+
+                                    <option th:each="part : ${parts}"
+                                            th:value="${part.id}"
+                                            th:text="${part.name + ' - Rs. ' + part.price + ' (Stock: ' + part.stockQuantity + ')'}">
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+
+                            <!-- Quantity -->
+                            <div class="col-md-4">
+
+                                <label class="form-label">
+                                    Quantity
+                                </label>
+
+                                <input type="number"
+                                       id="quantityInput"
+                                       class="form-control"
+                                       min="1"
+                                       value="1">
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- Add Part Button -->
+                        <button type="button"
+                                class="btn btn-primary mt-3"
+                                onclick="addPart()">
+
+                            <i class="bi bi-plus-lg"></i>
+                            Add Part
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ORDER ITEMS -->
+                <div class="card mb-4">
+
+                    <div class="card-header">
+                        <strong>Order Items</strong>
+                    </div>
+
+                    <div class="table-responsive">
+
+                        <table class="table table-hover mb-0">
+
+                            <thead>
+
+                            <tr>
+                                <th>Part</th>
+                                <th>Quantity</th>
+                                <th>Unit Price</th>
+                                <th>Subtotal</th>
+                                <th></th>
+                            </tr>
+
+                            </thead>
+
+
+                            <tbody id="orderItemsTable">
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+
+                <!-- TOTAL AMOUNT -->
+                <div class="mb-3">
+
+                    <label class="form-label">
+                        Total Amount
+                    </label>
+
+                    <!-- Display total -->
+                    <div class="form-control"
+                         style="font-weight: bold;
+                                font-size: 18px;
+                                background-color: #f8f9fa;">
+
+                        Rs. <span id="totalAmount">0.00</span>
+
+                    </div>
+
+                    <!-- Hidden value sent to backend -->
+                    <input type="hidden"
+                           th:field="*{totalAmount}"
+                           id="totalAmountInput">
+
+                    <div class="text-danger"
+                         th:if="${#fields.hasErrors('totalAmount')}"
+                         th:errors="*{totalAmount}">
+                    </div>
+
+                </div>
+
+
+                <!-- STATUS -->
+                <div class="mb-3">
+
+                    <label class="form-label">
+                        Order Status
+                    </label>
+
+                    <select th:field="*{status}"
+                            class="form-select">
+
+                        <option value="PENDING">
+                            Pending
+                        </option>
+
+                        <option value="CONFIRMED">
+                            Confirmed
+                        </option>
+
+                        <option value="SHIPPED">
+                            Shipped
+                        </option>
+
+                        <option value="DELIVERED">
+                            Delivered
+                        </option>
+
+                        <option value="CANCELLED">
+                            Cancelled
+                        </option>
+
+                    </select>
+
+                    <div class="text-danger"
+                         th:if="${#fields.hasErrors('status')}"
+                         th:errors="*{status}">
+                    </div>
+
+                </div>
+
+
+                <!-- BUTTONS -->
+                <div class="d-flex gap-2">
+
+                    <button type="submit"
+                            class="btn btn-accent">
+
+                        <i class="bi bi-check-lg"></i>
+                        Save Order
+
+                    </button>
+
+
+                    <a th:href="@{/orders}"
+                       class="btn btn-outline-secondary">
+
+                        Cancel
+
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+
+    <!-- JAVASCRIPT
+         IMPORTANT:
+         Script is INSIDE the section because the layout
+         replaces the original page using the section fragment.
+    -->
+
+    <script>
+
+        let itemIndex = 0;
+
+        let totalAmount = 0;
+
+
+        // =========================
+        // ADD PART
+        // =========================
+
+        function addPart() {
+
+            const partSelect =
+                document.getElementById("partSelect");
+
+            const quantityInput =
+                document.getElementById("quantityInput");
+
+
+            const partId = partSelect.value;
+
+            const quantity =
+                parseInt(quantityInput.value);
+
+
+            // Check part
+            if (!partId) {
+
+                alert("Please select a part.");
+
+                return;
+            }
+
+
+            // Check quantity
+            if (!quantity || quantity < 1) {
+
+                alert("Please enter a valid quantity.");
+
+                return;
+            }
+
+
+            // Get selected option
+            const selectedOption =
+                partSelect.options[
+                    partSelect.selectedIndex
+                ];
+
+
+            const partText =
+                selectedOption.text;
+
+
+            // Extract price
+            const priceMatch =
+                partText.match(/Rs\.\s*([\d.]+)/);
+
+
+            if (!priceMatch) {
+
+                alert("Unable to read part price.");
+
+                return;
+            }
+
+
+            const unitPrice =
+                parseFloat(priceMatch[1]);
+
+
+            // Calculate subtotal
+            const subtotal =
+                unitPrice * quantity;
+
+
+            // Add to total
+            totalAmount += subtotal;
+
+
+            // Get table
+            const table =
+                document.getElementById(
+                    "orderItemsTable"
+                );
+
+
+            // Create row
+            const row =
+                document.createElement("tr");
+
+
+            row.innerHTML = `
+
+                <td>
+
+                    ${partText}
+
+                    <input type="hidden"
+                           name="items[${itemIndex}].part.id"
+                           value="${partId}">
+
+                </td>
+
+
+                <td>
+
+                    ${quantity}
+
+                    <input type="hidden"
+                           name="items[${itemIndex}].quantity"
+                           value="${quantity}">
+
+                </td>
+
+
+                <td>
+
+                    Rs. ${unitPrice.toFixed(2)}
+
+                    <input type="hidden"
+                           name="items[${itemIndex}].unitPrice"
+                           value="${unitPrice}">
+
+                </td>
+
+
+                <td>
+
+                    Rs. ${subtotal.toFixed(2)}
+
+                </td>
+
+
+                <td>
+
+                    <button type="button"
+                            class="btn btn-sm btn-outline-danger"
+                            onclick="removePart(this, ${subtotal})">
+
+                        <i class="bi bi-trash"></i>
+
+                    </button>
+
+                </td>
+
+            `;
+
+
+            // Add row to table
+            table.appendChild(row);
+
+
+            // Increase index
+            itemIndex++;
+
+
+            // Update total
+            updateTotal();
+
+
+            // Reset selection
+            partSelect.value = "";
+
+            quantityInput.value = 1;
+
+        }
+
+
+        // =========================
+        // REMOVE PART
+        // =========================
+
+        function removePart(button, subtotal) {
+
+            // Remove row
+            button.closest("tr").remove();
+
+
+            // Update total
+            totalAmount -= subtotal;
+
+
+            // Prevent negative total
+            if (totalAmount < 0) {
+
+                totalAmount = 0;
+
+            }
+
+
+            updateTotal();
+
+        }
+
+
+        // =========================
+        // UPDATE TOTAL
+        // =========================
+
+        function updateTotal() {
+
+            // Display total
+            document.getElementById(
+                "totalAmount"
+            ).innerText =
+                totalAmount.toFixed(2);
+
+
+            // Send total to backend
+            document.getElementById(
+                "totalAmountInput"
+            ).value =
+                totalAmount.toFixed(2);
+
+        }
+
+    </script>
+
+</section>
+
+</body>
+</html>
+
