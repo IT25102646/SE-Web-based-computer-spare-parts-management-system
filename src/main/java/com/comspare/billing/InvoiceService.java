@@ -129,4 +129,10 @@ public class InvoiceService {
 
         return invoice.getId();
     }
+
+    // ---------- Get a single payment (used for the receipt) ----------
+    public Payment getPaymentById(Long paymentId) {
+        return paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new IllegalArgumentException("Payment not found: " + paymentId));
+    }
 }

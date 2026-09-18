@@ -115,6 +115,8 @@
                     <td th:text="${p.referenceNo}">-</td>
                     <td class="text-end" th:text="${#numbers.formatDecimal(p.amount,1,2)}">0.00</td>
                     <td class="text-end">
+                        <a th:href="@{/invoices/payments/{pid}/receipt(pid=${p.id})}"
+                           class="btn btn-sm btn-outline-secondary mb-1">Receipt</a>
                         <form method="post"
                               th:action="@{/invoices/payments/{pid}/delete(pid=${p.id})}"
                               onsubmit="return confirm('Remove this payment? The invoice total will be recalculated.');">

@@ -71,4 +71,12 @@ public class InvoiceController {
         Long invoiceId = invoiceService.deletePayment(paymentId);
         return "redirect:/invoices/" + invoiceId;
     }
+    // Show the receipt for a single payment
+    @GetMapping("/payments/{paymentId}/receipt")
+    public String viewReceipt(@PathVariable Long paymentId, Model model) {
+        Payment payment = invoiceService.getPaymentById(paymentId);
+        model.addAttribute("payment", payment);
+        model.addAttribute("invoice", payment.getInvoice());
+        return "billing/receipt";
+    }
 }
