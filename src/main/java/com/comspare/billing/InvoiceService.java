@@ -18,11 +18,11 @@ public class InvoiceService {
         this.paymentRepository = paymentRepository;
     }
 
-    // ---------- 1. Order එකකින් invoice එකක් හදනවා ----------
+    // ---------- 1. Creating an invoice from an order ----------
     @Transactional
     public Invoice generateInvoice(Long orderId, String customerName, BigDecimal totalAmount) {
 
-        // එකම order එකට දැනටමත් invoice එකක් තියෙනවා නම්, ඒකම දෙනවා
+        // If an invoice already exists for the same order, return that invoice.
         return invoiceRepository.findByOrderId(orderId).orElseGet(() -> {
 
             Invoice invoice = new Invoice();
@@ -37,7 +37,7 @@ public class InvoiceService {
         });
     }
 
-    // ---------- 2. ගෙවීමක් record කරනවා ----------
+    // ---------- 2. Recording a payment ----------
     @Transactional
     public Payment recordPayment(Long invoiceId, BigDecimal amount,
                                  PaymentMethod method, String referenceNo) {
@@ -49,7 +49,7 @@ public class InvoiceService {
             throw new IllegalArgumentException("Payment amount must be greater than zero");
         }
 
-        // ගෙවීම save කරනවා
+        // Saving the payment
         Payment payment = new Payment();
         payment.setInvoice(invoice);
         payment.setAmount(amount);
@@ -57,7 +57,7 @@ public class InvoiceService {
         payment.setReferenceNo(referenceNo);
         paymentRepository.save(payment);
 
-        // Invoice එකේ ගෙවපු මුදල update කරනවා
+        // Updating the paid amount on the invoice
         BigDecimal newPaid = invoice.getAmountPaid().add(amount);
         invoice.setAmountPaid(newPaid);
         invoice.setPaymentStatus(decideStatus(newPaid, invoice.getTotalAmount()));
@@ -66,7 +66,7 @@ public class InvoiceService {
         return payment;
     }
 
-    // ---------- 3. තත්ත්වය තීරණය කරනවා ----------
+    // ---------- 3. Determining the status ----------
     private PaymentStatus decideStatus(BigDecimal paid, BigDecimal total) {
         if (paid.compareTo(total) >= 0) {
             return PaymentStatus.PAID;
@@ -77,13 +77,13 @@ public class InvoiceService {
         }
     }
 
-    // ---------- 4. Invoice අංකය හදනවා ----------
+    // ---------- 4. Generating the invoice number ----------
     private String generateInvoiceNumber() {
         long count = invoiceRepository.count() + 1;
         return String.format("INV-%05d", count);
     }
 
-    // ---------- 5. බලන්න ඕන දේවල් ----------
+    // ---------- 5. Things to check ----------
     public List<Invoice> getAllInvoices() {
         return invoiceRepository.findAllByOrderByInvoiceDateDesc();
     }
@@ -103,5 +103,30 @@ public class InvoiceService {
 
     public BigDecimal getBalance(Invoice invoice) {
         return invoice.getTotalAmount().subtract(invoice.getAmountPaid());
+    }
+    // ---------- Remove a payment that was recorded by mistake ----------
+    @Transactional
+    public Long deletePayment(Long paymentId) {
+
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new IllegalArgumentException("Payment not found: " + paymentId));
+
+        Invoice invoice = payment.getInvoice();
+
+        // Delete the payment record
+        paymentRepository.delete(payment);
+
+        // Recalculate the total from the remaining payments
+        BigDecimal newPaid = paymentRepository.findByInvoiceId(invoice.getId())
+                .stream()
+                .map(Payment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Update the invoice with the new paid amount and status
+        invoice.setAmountPaid(newPaid);
+        invoice.setPaymentStatus(decideStatus(newPaid, invoice.getTotalAmount()));
+        invoiceRepository.save(invoice);
+
+        return invoice.getId();
     }
 }

@@ -16,14 +16,14 @@ public class InvoiceController {
         this.invoiceService = invoiceService;
     }
 
-    // Invoice ලැයිස්තුව
+    // Invoice list
     @GetMapping
     public String listInvoices(Model model) {
         model.addAttribute("invoices", invoiceService.getAllInvoices());
         return "billing/invoice-list";
     }
 
-    // එක invoice එකක විස්තර
+    // view Invoice
     @GetMapping("/{id}")
     public String viewInvoice(@PathVariable Long id, Model model) {
         Invoice invoice = invoiceService.getInvoiceById(id);
@@ -34,13 +34,13 @@ public class InvoiceController {
         return "billing/invoice-detail";
     }
 
-    // අලුත් invoice එකක් හදන form එක
+    // new Invoice Form
     @GetMapping("/new")
     public String newInvoiceForm() {
         return "billing/invoice-form";
     }
 
-    // Invoice එක හදනවා
+    // createInvoice
     @PostMapping("/create")
     public String createInvoice(@RequestParam Long orderId,
                                 @RequestParam String customerName,
@@ -49,7 +49,7 @@ public class InvoiceController {
         return "redirect:/invoices/" + invoice.getId();
     }
 
-    // ගෙවීමක් record කරනවා
+    // record Payment
     @PostMapping("/{id}/pay")
     public String recordPayment(@PathVariable Long id,
                                 @RequestParam BigDecimal amount,
@@ -59,10 +59,16 @@ public class InvoiceController {
         return "redirect:/invoices/" + id;
     }
 
-    // ගෙවීම් ඉතිහාසය
+    // Payment history
     @GetMapping("/payments")
     public String paymentHistory(Model model) {
         model.addAttribute("payments", invoiceService.getAllPayments());
         return "billing/payment-history";
+    }
+    // Delete a payment and recalculate the invoice
+    @PostMapping("/payments/{paymentId}/delete")
+    public String deletePayment(@PathVariable Long paymentId) {
+        Long invoiceId = invoiceService.deletePayment(paymentId);
+        return "redirect:/invoices/" + invoiceId;
     }
 }
