@@ -89,7 +89,7 @@ public class ReturnRequestService {
                 .toList();
     }
 
-    // ================= UPDATE =================
+    // ================= UPDATE CUSTOMER / CLAIM =================
 
     @Transactional
     public ReturnRequest updateReturnRequest(
@@ -127,7 +127,7 @@ public class ReturnRequestService {
         return returnRequestRepository.save(existing);
     }
 
-    // ================= DELETE =================
+    // ================= DELETE CUSTOMER / CLAIM =================
 
     @Transactional
     public void deleteReturnRequest(Long id) {
