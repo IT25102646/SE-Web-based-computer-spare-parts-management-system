@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
+<head><title>Payment Receipt</title></head>
+<body>
+<section>
+
+    <div class="d-flex justify-content-between align-items-center mb-4 d-print-none">
+        <h2>Payment Receipt</h2>
+        <div>
+            <button onclick="window.print()" class="btn btn-primary">Print</button>
+            <a th:href="@{/invoices/{id}(id=${invoice.id})}"
+               class="btn btn-outline-secondary">Back to Invoice</a>
+        </div>
+    </div>
+
+    <div class="card mx-auto" style="max-width: 600px;">
+        <div class="card-body">
+
+            <div class="text-center mb-4">
+                <h4 class="mb-1">LankaTech Computer Supplies (Pvt) Ltd</h4>
+                <div class="text-muted">Payment Receipt</div>
+            </div>
+
+            <hr>
+
+            <table class="table table-sm">
+                <tr>
+                    <th style="width: 45%;">Receipt No</th>
+                    <td th:text="'RCP-' + ${#strings.replace(#strings.substring(invoice.invoiceNumber, 4), '-', '')} + '-' + ${payment.id}">RCP-00001-1</td>
+                </tr>
+                <tr>
+                    <th>Invoice No</th>
+                    <td th:text="${invoice.invoiceNumber}">INV-00001</td>
+                </tr>
+                <tr>
+                    <th>Customer</th>
+                    <td th:text="${invoice.customerName}">Customer</td>
+                </tr>
+                <tr>
+                    <th>Order ID</th>
+                    <td th:text="${invoice.orderId}">1</td>
+                </tr>
+                <tr>
+                    <th>Payment Date</th>
+                    <td th:text="${#temporals.format(payment.paymentDate,'yyyy-MM-dd HH:mm')}">2026-01-01</td>
+                </tr>
+                <tr>
+                    <th>Payment Method</th>
+                    <td th:text="${payment.paymentMethod}">CASH</td>
+                </tr>
+                <tr>
+                    <th>Reference No</th>
+                    <td th:text="${payment.referenceNo} ?: '-'">-</td>
+                </tr>
+            </table>
+
+            <hr>
+
+            <table class="table table-sm">
+                <tr>
+                    <th style="width: 45%;">Invoice Total</th>
+                    <td th:text="'Rs. ' + ${#numbers.formatDecimal(invoice.totalAmount,1,2)}">Rs. 0.00</td>
+                </tr>
+                <tr class="fs-5">
+                    <th>Amount Received</th>
+                    <td><strong th:text="'Rs. ' + ${#numbers.formatDecimal(payment.amount,1,2)}">Rs. 0.00</strong></td>
+                </tr>
+                <tr>
+                    <th>Total Paid to Date</th>
+                    <td th:text="'Rs. ' + ${#numbers.formatDecimal(invoice.amountPaid,1,2)}">Rs. 0.00</td>
+                </tr>
+                <tr>
+                    <th>Balance Due</th>
+                    <td th:text="'Rs. ' + ${#numbers.formatDecimal(invoice.totalAmount.subtract(invoice.amountPaid),1,2)}">Rs. 0.00</td>
+                </tr>
+                <tr>
+                    <th>Invoice Status</th>
+                    <td>
+                        <span th:text="${invoice.paymentStatus}"
+                              th:class="${invoice.paymentStatus.name() == 'PAID'} ? 'badge badge-approved'
+                                      : (${invoice.paymentStatus.name() == 'PARTIAL'} ? 'badge badge-pending'
+                                      : 'badge badge-rejected')">PENDING</span>
+                    </td>
+                </tr>
+            </table>
+
+            <hr>
+
+            <div class="text-center text-muted mt-4">
+                <small>Thank you for your business.</small><br>
+                <small>This is a computer generated receipt.</small>
+            </div>
+
+        </div>
+    </div>
+
+</section>
+</body>
+</html>
