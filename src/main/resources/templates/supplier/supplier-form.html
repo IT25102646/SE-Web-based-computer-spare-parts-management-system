@@ -1,0 +1,60 @@
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
+<head><title>Supplier form</title></head>
+<body>
+<section>
+
+    <h2 th:text="${supplier.id == null ? 'Add Supplier' : 'Edit Supplier'}">Add Supplier</h2>
+
+    <div class="card" style="max-width:700px;">
+        <div class="card-body">
+
+            <form th:action="@{/suppliers/save}" th:object="${supplier}" method="post">
+
+                <input type="hidden" th:field="*{id}">
+
+                <div class="mb-3">
+                    <label class="form-label">Supplier Name</label>
+                    <input type="text" th:field="*{supplierName}" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Contact Person</label>
+                    <input type="text" th:field="*{contactPerson}" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Phone</label>
+                    <input type="text" th:field="*{phone}" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" th:field="*{email}" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Address</label>
+                    <textarea th:field="*{address}" class="form-control" rows="3"></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Status</label>
+                    <select th:field="*{status}" class="form-select">
+                        <option value="ACTIVE">Active</option>
+                        <option value="INACTIVE">Inactive</option>
+                    </select>
+                </div>
+
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-accent">Save Supplier</button>
+                    <a th:href="@{/suppliers}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+</section>
+</body>
+</html>

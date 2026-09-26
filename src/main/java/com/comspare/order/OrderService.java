@@ -26,6 +26,7 @@ public class OrderService {
 
         double total = 0.0;
 
+        // Process each order item
         for (OrderItem item : order.getItems()) {
 
             if (item.getPart() == null || item.getPart().getId() == null) {
@@ -60,7 +61,7 @@ public class OrderService {
             // Calculate item subtotal
             item.calculateSubtotal();
 
-            // Add subtotal to total
+            // Add item subtotal to order total
             total += item.getSubtotal();
 
             // Reduce stock
@@ -97,12 +98,6 @@ public class OrderService {
         return orderRepository.findByOrderNumber(orderNumber);
     }
 
-    // Get customer's order history
-    public List<Order> getCustomerOrderHistory(String customerEmail) {
-        return orderRepository
-                .findByCustomerEmailOrderByOrderDateDesc(customerEmail);
-    }
-
     // Update Order Status
     @Transactional
     public Order updateOrderStatus(Long id, String status) {
@@ -122,5 +117,3 @@ public class OrderService {
         orderRepository.deleteById(id);
     }
 }
-
-
