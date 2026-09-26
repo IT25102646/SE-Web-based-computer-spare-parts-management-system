@@ -140,7 +140,7 @@ public class ReturnRequestController {
         return "returns/return-details";
     }
 
-    // ================= UPDATE FORM =================
+    // ================= UPDATE FORM (EDIT) =================
 
     @GetMapping("/edit/{id}")
     public String showEditForm(
@@ -162,7 +162,7 @@ public class ReturnRequestController {
         return "returns/return-form";
     }
 
-    // ================= UPDATE =================
+    // ================= UPDATE CUSTOMER / CLAIM =================
 
     @PostMapping("/update/{id}")
     public String updateReturn(
@@ -221,7 +221,7 @@ public class ReturnRequestController {
         }
     }
 
-    // ================= DELETE =================
+    // ================= DELETE CUSTOMER / CLAIM =================
 
     @PostMapping("/delete/{id}")
     public String deleteReturn(
