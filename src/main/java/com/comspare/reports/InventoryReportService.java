@@ -516,4 +516,51 @@ public class InventoryReportService {
 
         return jdbcTemplate.queryForList(sql);
     }
+
+    // =========================================================
+    // 9. REORDER PREDICTION (STOCK PREDICTION & ANALYTICS)
+    // =========================================================
+    //
+    // Predicts how much stock should be reordered for parts that
+    // have reached or fallen below their reorder level. The
+    // suggested quantity brings stock back up to double the
+    // reorder level, giving a buffer against future demand.
+    // Parts with zero stock are flagged as OUT_OF_STOCK,
+    // everything else at or below the reorder level is
+    // flagged as CRITICAL_LOW.
+    // =========================================================
+
+    public List<Map<String, Object>> getReorderPredictions(
+            String category) {
+
+        StringBuilder sql = new StringBuilder("""
+                SELECT
+                    p.product_code AS ProductCode,
+                    p.name AS PartName,
+                    p.category AS Category,
+                    p.stock_quantity AS CurrentStock,
+                    p.reorder_level AS ReorderLevel,
+                    ((p.reorder_level * 2) - p.stock_quantity) AS SuggestedReorderQty,
+                    p.price AS UnitPrice,
+                    (((p.reorder_level * 2) - p.stock_quantity) * p.price) AS EstimatedReorderCost,
+                    CASE
+                        WHEN p.stock_quantity = 0 THEN 'OUT_OF_STOCK'
+                        ELSE 'CRITICAL_LOW'
+                    END AS Status
+                FROM parts p
+                WHERE p.stock_quantity <= p.reorder_level
+                """);
+
+        if (category != null && !category.isBlank()) {
+            sql.append(" AND p.category = ? ");
+        }
+
+        sql.append(" ORDER BY (p.stock_quantity - p.reorder_level) ASC ");
+
+        if (category != null && !category.isBlank()) {
+            return jdbcTemplate.queryForList(sql.toString(), category);
+        }
+
+        return jdbcTemplate.queryForList(sql.toString());
+    }
 }

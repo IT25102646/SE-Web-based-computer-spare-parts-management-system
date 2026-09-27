@@ -447,6 +447,30 @@ public class ReportController {
     }
 
     // =========================================================
+    // 16. REORDER PREDICTION (STOCK PREDICTION & ANALYTICS)
+    // =========================================================
+
+    @GetMapping("/reports/reorder-prediction")
+    public String reorderPrediction(
+            @RequestParam(required = false) String category,
+            Model model) {
+
+        List<Map<String, Object>> rows =
+                inventoryReportService.getReorderPredictions(category);
+
+        return view(
+                model,
+                "Reorder Prediction Report",
+                "Predicted reorder quantities for parts at or below their reorder level.",
+                rows,
+                category,
+                null,
+                null,
+                "reorder-prediction"
+        );
+    }
+
+    // =========================================================
     // PDF EXPORT
     // =========================================================
 
@@ -553,6 +577,12 @@ public class ReportController {
                 rows = salesLossReportService.getInventoryStatusReport(
                         category);
                 title = "Inventory Status Report";
+            }
+
+            case "reorder-prediction" -> {
+                rows = inventoryReportService.getReorderPredictions(
+                        category);
+                title = "Reorder Prediction Report";
             }
 
             default -> {
