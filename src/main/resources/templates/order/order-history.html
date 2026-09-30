@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Order History</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+
+        h2 {
+            margin-bottom: 10px;
+        }
+
+        .customer {
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .empty {
+            padding: 20px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>My Order History</h2>
+
+<div class="customer">
+    <strong>Customer Email:</strong>
+    <span th:text="${customerEmail}"></span>
+</div>
+
+<!-- No orders -->
+<div class="empty" th:if="${#lists.isEmpty(orders)}">
+    <p>No previous orders found.</p>
+</div>
+
+<!-- Orders -->
+<table th:if="${not #lists.isEmpty(orders)}">
+
+    <thead>
+    <tr>
+        <th>Order Number</th>
+        <th>Order Date</th>
+        <th>Total Amount</th>
+        <th>Status</th>
+    </tr>
+    </thead>
+
+    <tbody>
+
+    <tr th:each="order : ${orders}">
+
+        <td th:text="${order.orderNumber}">
+            ORD001
+        </td>
+
+        <td th:text="${order.orderDate}">
+            2026-09-17
+        </td>
+
+        <td th:text="${order.totalAmount}">
+            25000.00
+        </td>
+
+        <td th:text="${order.status}">
+            PENDING
+        </td>
+
+    </tr>
+
+    </tbody>
+
+</table>
+
+</body>
+</html>
+
+
+

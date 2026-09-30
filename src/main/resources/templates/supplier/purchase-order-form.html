@@ -1,0 +1,57 @@
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
+<head><title>Purchase order form</title></head>
+<body>
+<section>
+
+    <h2>Create Purchase Order</h2>
+
+    <div class="card" style="max-width:800px;">
+        <div class="card-body">
+
+            <form th:action="@{/purchase-orders/save}" th:object="${purchaseOrder}" method="post">
+
+                <input type="hidden" th:field="*{id}">
+
+                <div class="mb-3">
+                    <label class="form-label">Order Number</label>
+                    <input type="text" th:field="*{orderNumber}" class="form-control" placeholder="PO-001" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Supplier</label>
+                    <select th:field="*{supplier.id}" class="form-select" required>
+                        <option value="">Select Supplier</option>
+                        <option th:each="supplier : ${suppliers}" th:value="${supplier.id}" th:text="${supplier.supplierName}"></option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Order Date</label>
+                    <input type="date" th:field="*{orderDate}" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Expected Delivery Date</label>
+                    <input type="date" th:field="*{expectedDeliveryDate}" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Notes</label>
+                    <textarea th:field="*{notes}" class="form-control" rows="4"></textarea>
+                </div>
+
+                <input type="hidden" th:field="*{status}">
+
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-accent">Save Purchase Order</button>
+                    <a th:href="@{/purchase-orders}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+</section>
+</body>
+</html>
