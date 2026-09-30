@@ -3,11 +3,13 @@ package com.comspare.billing;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.math.BigDecimal;
 
 @Controller
 @RequestMapping("/invoices")
+@PreAuthorize("hasAnyRole('ADMIN','FINANCE_OFFICER')")
 public class InvoiceController {
 
     private final InvoiceService invoiceService;
