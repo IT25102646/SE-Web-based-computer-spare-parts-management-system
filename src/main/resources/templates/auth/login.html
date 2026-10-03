@@ -1,95 +1,32 @@
 <!DOCTYPE html>
-<html lang="en"
-      xmlns:th="http://www.thymeleaf.org">
-
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>ComSpare - Login</title>
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-          rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sign in - ComSpare</title>
+    <link rel="stylesheet" th:href="@{/css/user.css}">
 </head>
+<body class="login-page">
+<main class="login-card" style="margin:0;padding:32px">
+    <h1>Sign in to ComSpare</h1>
+    <p class="sub">Use the account your administrator created for you.</p>
 
-<body class="bg-light">
-
-<div class="container">
-
-    <div class="row justify-content-center mt-5">
-
-        <div class="col-md-5">
-
-            <div class="card shadow">
-
-                <div class="card-body p-4">
-
-                    <h2 class="text-center mb-4">
-                        ComSpare
-                    </h2>
-
-                    <h5 class="text-center mb-4">
-                        Login
-                    </h5>
-
-                    <div th:if="${param.error}"
-                         class="alert alert-danger">
-                        Invalid email or password.
-                    </div>
-
-                    <div th:if="${param.logout}"
-                         class="alert alert-success">
-                        You have been logged out.
-                    </div>
-
-                    <form th:action="@{/login}"
-                          method="post">
-
-                        <div class="mb-3">
-
-                            <label class="form-label">
-                                Email
-                            </label>
-
-                            <input type="email"
-                                   name="username"
-                                   class="form-control"
-                                   placeholder="Enter email"
-                                   required>
-
-                        </div>
-
-                        <div class="mb-3">
-
-                            <label class="form-label">
-                                Password
-                            </label>
-
-                            <input type="password"
-                                   name="password"
-                                   class="form-control"
-                                   placeholder="Enter password"
-                                   required>
-
-                        </div>
-
-                        <button type="submit"
-                                class="btn btn-primary w-100">
-                            Login
-                        </button>
-
-                    </form>
-
-                </div>
-
-            </div>
-
-        </div>
-
+    <div class="alert error" th:if="${param.error}" role="alert" style="margin-top:16px">
+        Sign-in failed. Check your email and password, or ask an Admin whether your account is still active.
     </div>
+    <div class="alert success" th:if="${param.logout}" style="margin-top:16px">You have been signed out.</div>
 
-</div>
-
+    <form th:action="@{/login}" method="post" class="form-grid">
+        <div>
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" autocomplete="username" required autofocus>
+        </div>
+        <div>
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="btn">Sign in</button>
+    </form>
+</main>
 </body>
-
 </html>

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<header th:fragment="nav" class="topbar">
+    <span class="brand">ComSpare</span>
+    <nav aria-label="Main">
+        <a th:href="@{/users}"   th:if="${isAdmin}" th:classappend="${activePage == 'users'} ? 'active'">Users</a>
+        <a th:href="@{/audit}"   th:if="${isAdmin}" th:classappend="${activePage == 'audit'} ? 'active'">Audit trail</a>
+        <a th:href="@{/profile}" th:classappend="${activePage == 'profile'} ? 'active'">My profile</a>
+        <!-- add links to your teammates' modules here, e.g. <a th:href="@{/parts}">Inventory</a> -->
+    </nav>
+    <div class="whoami">
+        <span th:text="${currentUserName}">user@comspare.lk</span>
+        <form th:action="@{/logout}" method="post">
+            <button type="submit" class="link-btn">Log out</button>
+        </form>
+    </div>
+</header>
+</body>
+</html>
