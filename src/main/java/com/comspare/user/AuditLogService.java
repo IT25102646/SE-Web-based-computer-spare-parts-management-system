@@ -1,40 +1,43 @@
 package com.comspare.user;
 
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 public class AuditLogService {
 
-    private final AuditLogRepository auditLogRepository;
+    private final AuditLogRepository repository;
 
-    public AuditLogService(AuditLogRepository auditLogRepository) {
-        this.auditLogRepository = auditLogRepository;
+    public AuditLogService(AuditLogRepository repository) {
+        this.repository = repository;
     }
 
-    public void log(User user,
-                    String action,
-                    String tableName,
-                    Long recordId,
-                    String oldValue,
-                    String newValue) {
-
-        AuditLog auditLog = new AuditLog();
-
-        auditLog.setUser(user);
-        auditLog.setAction(action);
-        auditLog.setTableName(tableName);
-        auditLog.setRecordId(recordId);
-        auditLog.setOldValue(oldValue);
-        auditLog.setNewValue(newValue);
-        auditLog.setTimestamp(LocalDateTime.now());
-
-        auditLogRepository.save(auditLog);
+    /** Logs an action performed by the currently logged-in user. */
+    public void log(String action, String target, String oldValue, String newValue) {
+        repository.save(new AuditLog(currentActor(), action, target, oldValue, newValue));
     }
 
-    public List<AuditLog> getAllLogs() {
-        return auditLogRepository.findAllByOrderByTimestampDesc();
+    /** Logs an action for a specific actor (used for login success/failure events). */
+    public void logAs(String actor, String action, String target, String oldValue, String newValue) {
+        repository.save(new AuditLog(actor, action, target, oldValue, newValue));
+    }
+
+    public List<AuditLog> findAll(String query) {
+        if (query == null || query.isBlank()) {
+            return repository.findAllByOrderByLoggedAtDesc();
+        }
+        return repository.search(query.trim());
+    }
+
+    public static String currentActor() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth instanceof AnonymousAuthenticationToken || !auth.isAuthenticated()) {
+            return "SYSTEM";
+        }
+        return auth.getName();
     }
 }

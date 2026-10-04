@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My profile - ComSpare</title>
+    <link rel="stylesheet" th:href="@{/css/user.css}">
+</head>
+<body>
+<header th:replace="~{fragments/user-nav :: nav}"></header>
+<main>
+    <div class="page-head">
+        <div>
+            <h1>My profile</h1>
+            <p class="sub">Your account details and password.</p>
+        </div>
+    </div>
+
+    <div class="alert success" th:if="${success}" th:text="${success}" role="status"></div>
+    <div class="alert error"   th:if="${error}"   th:text="${error}"   role="alert"></div>
+
+    <div class="stack" style="max-width:560px">
+        <div class="panel pad">
+            <dl class="kv">
+                <dt>Name</dt>  <dd th:text="${me.name}">Kasun Silva</dd>
+                <dt>Email</dt> <dd th:text="${me.email}">kasun@comspare.lk</dd>
+                <dt>Role</dt>  <dd><span class="badge" th:text="${me.role.roleName}">Store Keeper</span></dd>
+            </dl>
+        </div>
+
+        <div class="panel pad">
+            <h2 style="margin:0 0 16px;font-size:18px">Change password</h2>
+            <form th:action="@{/profile/password}" method="post" class="form-grid">
+                <div>
+                    <label for="currentPassword">Current password</label>
+                    <input type="password" id="currentPassword" name="currentPassword" autocomplete="current-password" required>
+                </div>
+                <div>
+                    <label for="newPassword">New password</label>
+                    <input type="password" id="newPassword" name="newPassword" autocomplete="new-password" required>
+                    <div class="hint">At least 8 characters, with a letter and a number.</div>
+                </div>
+                <div>
+                    <label for="confirmPassword">Confirm new password</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" autocomplete="new-password" required>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn">Update password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+</body>
+</html>
