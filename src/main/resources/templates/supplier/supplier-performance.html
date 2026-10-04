@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Supplier Performance</title>
+    <link rel="stylesheet" th:href="@{/css/theme.css}">
+</head>
+
+<body>
+
+<div class="container mt-4">
+
+    <h1>Supplier Performance</h1>
+
+    <p>
+        Supplier reliability is calculated from completed deliveries.
+    </p>
+
+    <table class="table table-bordered">
+
+        <thead>
+
+        <tr>
+            <th>Supplier</th>
+            <th>Total Deliveries</th>
+            <th>On-Time Deliveries</th>
+            <th>Late Deliveries</th>
+            <th>Reliability</th>
+        </tr>
+
+        </thead>
+
+        <tbody>
+
+        <tr th:each="item : ${performance}">
+
+            <td th:text="${item.supplierName}"></td>
+
+            <td th:text="${item.totalDeliveries}"></td>
+
+            <td th:text="${item.onTimeDeliveries}"></td>
+
+            <td th:text="${item.lateDeliveries}"></td>
+
+            <td>
+                <span th:text="${#numbers.formatDecimal(item.reliabilityPercentage, 1, 2)} + '%'">
+                </span>
+            </td>
+
+        </tr>
+
+        <tr th:if="${#lists.isEmpty(performance)}">
+
+            <td colspan="5"
+                class="text-center">
+                No supplier performance data available.
+            </td>
+
+        </tr>
+
+        </tbody>
+
+    </table>
+
+    <a th:href="@{/suppliers}"
+       class="btn btn-secondary">
+        Suppliers
+    </a>
+
+    <a th:href="@{/purchase-orders}"
+       class="btn btn-primary">
+        Purchase Orders
+    </a>
+
+</div>
+
+</body>
+</html>

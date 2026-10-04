@@ -1,61 +1,18 @@
 <!DOCTYPE html>
-<html lang="en"
-      xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org">
 
 <head>
-
-    <meta charset="UTF-8">
-
     <title>Supplier Form</title>
-
-    <style>
-
-        body {
-            font-family: Arial, sans-serif;
-            background: #f5f7fa;
-            margin: 40px;
-        }
-
-        .container {
-            max-width: 700px;
-            margin: auto;
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-        }
-
-        label {
-            display: block;
-            margin-top: 15px;
-            margin-bottom: 5px;
-        }
-
-        input,
-        textarea,
-        select {
-            width: 100%;
-            padding: 10px;
-            box-sizing: border-box;
-        }
-
-        button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            background: #2563eb;
-            color: white;
-            border: none;
-            border-radius: 5px;
-        }
-
-    </style>
-
+    <link rel="stylesheet" th:href="@{/css/theme.css}">
 </head>
 
 <body>
 
-<div class="container">
+<div class="container mt-4">
 
-    <h1>Supplier</h1>
+    <h1 th:text="${supplier.id == null ? 'Add Supplier' : 'Edit Supplier'}">
+        Supplier
+    </h1>
 
     <form th:action="@{/suppliers/save}"
           th:object="${supplier}"
@@ -64,51 +21,97 @@
         <input type="hidden"
                th:field="*{id}">
 
-        <label>Supplier Name</label>
+        <div class="mb-3">
 
-        <input type="text"
-               th:field="*{supplierName}"
-               required>
+            <label>Supplier Name</label>
 
-        <label>Contact Person</label>
+            <input type="text"
+                   class="form-control"
+                   th:field="*{supplierName}"
+                   required>
 
-        <input type="text"
-               th:field="*{contactPerson}">
+            <div class="text-danger"
+                 th:if="${#fields.hasErrors('supplierName')}"
+                 th:errors="*{supplierName}">
+            </div>
 
-        <label>Phone</label>
+        </div>
 
-        <input type="text"
-               th:field="*{phone}">
+        <div class="mb-3">
 
-        <label>Email</label>
+            <label>Contact Person</label>
 
-        <input type="email"
-               th:field="*{email}">
+            <input type="text"
+                   class="form-control"
+                   th:field="*{contactPerson}">
 
-        <label>Address</label>
+        </div>
 
-        <textarea th:field="*{address}"
-                  rows="4"></textarea>
+        <div class="mb-3">
 
-        <label>Status</label>
+            <label>Phone</label>
 
-        <select th:field="*{status}">
+            <input type="text"
+                   class="form-control"
+                   th:field="*{phone}">
 
-            <option value="ACTIVE">
-                Active
-            </option>
+        </div>
 
-            <option value="INACTIVE">
-                Inactive
-            </option>
+        <div class="mb-3">
 
-        </select>
+            <label>Email</label>
 
-        <button type="submit">
+            <input type="email"
+                   class="form-control"
+                   th:field="*{email}">
+
+            <div class="text-danger"
+                 th:if="${#fields.hasErrors('email')}"
+                 th:errors="*{email}">
+            </div>
+
+        </div>
+
+        <div class="mb-3">
+
+            <label>Address</label>
+
+            <textarea class="form-control"
+                      th:field="*{address}">
+            </textarea>
+
+        </div>
+
+        <div class="mb-3">
+
+            <label>Status</label>
+
+            <select class="form-control"
+                    th:field="*{status}">
+
+                <option value="">
+                    Select status
+                </option>
+
+                <option value="ACTIVE">
+                    ACTIVE
+                </option>
+
+                <option value="INACTIVE">
+                    INACTIVE
+                </option>
+
+            </select>
+
+        </div>
+
+        <button type="submit"
+                class="btn btn-primary">
             Save Supplier
         </button>
 
-        <a th:href="@{/suppliers}">
+        <a th:href="@{/suppliers}"
+           class="btn btn-secondary">
             Cancel
         </a>
 

@@ -14,9 +14,6 @@ public class PurchaseOrderItem {
     @JoinColumn(name = "purchase_order_id", nullable = false)
     private PurchaseOrder purchaseOrder;
 
-    /*
-     * ID of the spare part from the Inventory module.
-     */
     @Column(name = "part_id", nullable = false)
     private Long partId;
 

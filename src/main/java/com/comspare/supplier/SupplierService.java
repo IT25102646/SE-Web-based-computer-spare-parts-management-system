@@ -9,9 +9,14 @@ import java.util.Optional;
 public class SupplierService {
 
     private final SupplierRepository supplierRepository;
+    private final PurchaseOrderRepository purchaseOrderRepository;
 
-    public SupplierService(SupplierRepository supplierRepository) {
+    public SupplierService(
+            SupplierRepository supplierRepository,
+            PurchaseOrderRepository purchaseOrderRepository) {
+
         this.supplierRepository = supplierRepository;
+        this.purchaseOrderRepository = purchaseOrderRepository;
     }
 
     public List<Supplier> getAllSuppliers() {
@@ -24,6 +29,13 @@ public class SupplierService {
 
     public Supplier saveSupplier(Supplier supplier) {
 
+        if (supplier.getSupplierName() == null ||
+                supplier.getSupplierName().isBlank()) {
+
+            throw new IllegalArgumentException(
+                    "Supplier name is required.");
+        }
+
         if (supplier.getStatus() == null ||
                 supplier.getStatus().isBlank()) {
 
@@ -34,6 +46,17 @@ public class SupplierService {
     }
 
     public void deleteSupplier(Long id) {
+
+        if (!supplierRepository.existsById(id)) {
+            throw new IllegalArgumentException(
+                    "Supplier not found.");
+        }
+
+        if (purchaseOrderRepository.existsBySupplierId(id)) {
+            throw new IllegalStateException(
+                    "Cannot delete a supplier with existing purchase orders.");
+        }
+
         supplierRepository.deleteById(id);
     }
 }

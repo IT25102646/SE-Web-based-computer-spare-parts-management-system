@@ -1,7 +1,9 @@
 package com.comspare.supplier;
 
+import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 @Controller
@@ -10,9 +12,7 @@ public class SupplierController {
 
     private final SupplierService supplierService;
 
-    public SupplierController(
-            SupplierService supplierService) {
-
+    public SupplierController(SupplierService supplierService) {
         this.supplierService = supplierService;
     }
 
@@ -47,7 +47,7 @@ public class SupplierController {
                 supplierService.getSupplierById(id)
                         .orElseThrow(() ->
                                 new IllegalArgumentException(
-                                        "Supplier not found"));
+                                        "Supplier not found."));
 
         model.addAttribute(
                 "supplier",
@@ -59,7 +59,12 @@ public class SupplierController {
 
     @PostMapping("/save")
     public String saveSupplier(
-            @ModelAttribute Supplier supplier) {
+            @Valid @ModelAttribute("supplier") Supplier supplier,
+            BindingResult result) {
+
+        if (result.hasErrors()) {
+            return "supplier/supplier-form";
+        }
 
         supplierService.saveSupplier(supplier);
 

@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.*;
 public class PurchaseOrderController {
 
     private final PurchaseOrderService purchaseOrderService;
-
     private final SupplierService supplierService;
 
     public PurchaseOrderController(
@@ -17,7 +16,6 @@ public class PurchaseOrderController {
             SupplierService supplierService) {
 
         this.purchaseOrderService = purchaseOrderService;
-
         this.supplierService = supplierService;
     }
 
@@ -39,6 +37,13 @@ public class PurchaseOrderController {
                 new PurchaseOrder();
 
         purchaseOrder.setStatus("PENDING");
+
+        PurchaseOrderItem item =
+                new PurchaseOrderItem();
+
+        item.setReceivedQuantity(0);
+
+        purchaseOrder.getItems().add(item);
 
         model.addAttribute(
                 "purchaseOrder",
@@ -63,7 +68,7 @@ public class PurchaseOrderController {
                         .getPurchaseOrderById(id)
                         .orElseThrow(() ->
                                 new IllegalArgumentException(
-                                        "Purchase order not found"));
+                                        "Purchase order not found."));
 
         model.addAttribute(
                 "purchaseOrder",
@@ -82,9 +87,8 @@ public class PurchaseOrderController {
     public String savePurchaseOrder(
             @ModelAttribute PurchaseOrder purchaseOrder) {
 
-        purchaseOrderService.savePurchaseOrder(
-                purchaseOrder
-        );
+        purchaseOrderService
+                .savePurchaseOrder(purchaseOrder);
 
         return "redirect:/purchase-orders";
     }
