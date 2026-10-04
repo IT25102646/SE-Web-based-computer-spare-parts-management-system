@@ -1,49 +1,48 @@
-<!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Audit trail - ComSpare</title>
-    <link rel="stylesheet" th:href="@{/css/user.css}">
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
+<head><title>Audit Trail</title></head>
 <body>
-<header th:replace="~{fragments/user-nav :: nav}"></header>
-<main>
-    <div class="page-head">
-        <div>
-            <h1>Audit trail</h1>
-            <p class="sub">Who did what, and when. Entries cannot be edited or deleted by anyone.</p>
-        </div>
+<section>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">Audit Trail</h2>
+        <a th:href="@{/users}" class="btn btn-outline-secondary">Back to Users</a>
     </div>
 
-    <div class="panel">
-        <form class="toolbar" th:action="@{/audit}" method="get">
-            <input type="search" name="q" th:value="${q}" placeholder="Search by person, action or record" aria-label="Search audit trail">
-            <button type="submit" class="btn">Search</button>
-            <a class="btn ghost" th:href="@{/audit}" th:if="${!#strings.isEmpty(q)}">Clear</a>
-        </form>
-        <div class="table-wrap">
-            <table>
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
                 <thead>
-                <tr><th>When</th><th>Who</th><th>Action</th><th>Record</th><th>Before</th><th>After</th></tr>
+                <tr>
+                    <th>ID</th>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Table</th>
+                    <th>Record ID</th>
+                    <th>Old Value</th>
+                    <th>New Value</th>
+                    <th>Timestamp</th>
+                </tr>
                 </thead>
                 <tbody>
-                <tr th:each="l : ${logs}">
-                    <td class="mono" th:text="${#temporals.format(l.loggedAt, 'yyyy-MM-dd HH:mm:ss')}">2026-10-03 11:09:00</td>
-                    <td th:text="${l.performedBy}">admin@comspare.lk</td>
-                    <td><span class="badge"
-                              th:classappend="${#strings.contains(l.action,'FAILED') or #strings.contains(l.action,'DEACTIVATED')} ? 'bad'
-                                  : (${#strings.contains(l.action,'ROLE') or #strings.contains(l.action,'PASSWORD')} ? 'warn' : '')"
-                              th:text="${l.action}">USER_CREATED</span></td>
-                    <td th:text="${l.targetRecord}">User #4</td>
-                    <td th:text="${l.oldValue}">-</td>
-                    <td th:text="${l.newValue}">-</td>
+                <tr th:each="log : ${logs}">
+                    <td th:text="${log.id}"></td>
+                    <td th:text="${log.user != null ? log.user.email : 'System'}"></td>
+                    <td th:text="${log.action}"></td>
+                    <td th:text="${log.tableName}"></td>
+                    <td th:text="${log.recordId}"></td>
+                    <td th:text="${log.oldValue}"></td>
+                    <td th:text="${log.newValue}"></td>
+                    <td th:text="${#temporals.format(log.timestamp,'yyyy-MM-dd HH:mm')}"></td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(logs)}">
+                    <td colspan="8" class="text-center py-4">No audit records found.</td>
                 </tr>
                 </tbody>
             </table>
         </div>
-        <div class="empty" th:if="${#lists.isEmpty(logs)}">No matching entries.</div>
     </div>
-</main>
+
+</section>
 </body>
 </html>

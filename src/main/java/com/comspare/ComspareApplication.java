@@ -9,3 +9,4 @@ public class ComspareApplication {
         SpringApplication.run(ComspareApplication.class, args);
     }
 }
+
