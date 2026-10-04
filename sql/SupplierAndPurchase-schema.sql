@@ -54,6 +54,7 @@ CREATE TABLE purchase_order_items (
 
                                       part_id BIGINT NOT NULL,
 
+
                                       ordered_quantity INT NOT NULL,
 
                                       received_quantity INT,
