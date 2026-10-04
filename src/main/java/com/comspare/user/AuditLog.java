@@ -1,103 +1,62 @@
 package com.comspare.user;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.Immutable;
 
 import java.time.LocalDateTime;
 
+/**
+ * One row = one sensitive action: who, what, on which record, before/after, when.
+ * @Immutable tells Hibernate to never issue UPDATE/DELETE for this entity.
+ */
 @Entity
-@Table(name = "audit_logs")
+@Immutable
+@Table(name = "audit_log")
 public class AuditLog {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    @Column(name = "performed_by", nullable = false, length = 150, updatable = false)
+    private String performedBy;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 60, updatable = false)
     private String action;
 
-    @Column(name = "table_name")
-    private String tableName;
+    @Column(name = "target_record", length = 255, updatable = false)
+    private String targetRecord;
 
-    @Column(name = "record_id")
-    private Long recordId;
-
-    @Column(name = "old_value", columnDefinition = "VARCHAR(MAX)")
+    @Column(name = "old_value", length = 500, updatable = false)
     private String oldValue;
 
-    @Column(name = "new_value", columnDefinition = "VARCHAR(MAX)")
+    @Column(name = "new_value", length = 500, updatable = false)
     private String newValue;
 
-    @Column(nullable = false)
-    private LocalDateTime timestamp;
+    @Column(name = "logged_at", nullable = false, updatable = false)
+    private LocalDateTime loggedAt;
 
-    public AuditLog() {
-    }
+    public AuditLog() {}
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public String getAction() {
-        return action;
-    }
-
-    public void setAction(String action) {
+    public AuditLog(String performedBy, String action, String targetRecord,
+                    String oldValue, String newValue) {
+        this.performedBy = performedBy;
         this.action = action;
+        this.targetRecord = targetRecord;
+        this.oldValue = trim(oldValue);
+        this.newValue = trim(newValue);
+        this.loggedAt = LocalDateTime.now();
     }
 
-    public String getTableName() {
-        return tableName;
+    private static String trim(String s) {
+        return (s != null && s.length() > 500) ? s.substring(0, 500) : s;
     }
 
-    public void setTableName(String tableName) {
-        this.tableName = tableName;
-    }
-
-    public Long getRecordId() {
-        return recordId;
-    }
-
-    public void setRecordId(Long recordId) {
-        this.recordId = recordId;
-    }
-
-    public String getOldValue() {
-        return oldValue;
-    }
-
-    public void setOldValue(String oldValue) {
-        this.oldValue = oldValue;
-    }
-
-    public String getNewValue() {
-        return newValue;
-    }
-
-    public void setNewValue(String newValue) {
-        this.newValue = newValue;
-    }
-
-    public LocalDateTime getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(LocalDateTime timestamp) {
-        this.timestamp = timestamp;
-    }
+    public Long getId() { return id; }
+    public String getPerformedBy() { return performedBy; }
+    public String getAction() { return action; }
+    public String getTargetRecord() { return targetRecord; }
+    public String getOldValue() { return oldValue; }
+    public String getNewValue() { return newValue; }
+    public LocalDateTime getLoggedAt() { return loggedAt; }
 }

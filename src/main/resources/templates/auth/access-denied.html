@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Access denied - ComSpare</title>
+    <link rel="stylesheet" th:href="@{/css/user.css}">
+</head>
+<body>
+<header th:replace="~{fragments/user-nav :: nav}"></header>
+<main>
+    <div class="panel pad" style="max-width:560px">
+        <h1>You don't have access to this page</h1>
+        <p class="sub" style="margin-bottom:18px">
+            You are signed in, but your role isn't permitted to do this.
+            If you need access, ask an Admin to review your role.
+        </p>
+        <a class="btn ghost" th:href="@{/profile}">Go to my profile</a>
+    </div>
+</main>
+</body>
+</html>
