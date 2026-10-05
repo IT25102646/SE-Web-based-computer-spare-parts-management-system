@@ -5,16 +5,19 @@
 <section>
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="mb-0">Inventory</h2>
-        <a th:href="@{/parts/add}" class="btn btn-accent">
-            <i class="bi bi-plus-lg"></i> Add spare part
-        </a>
+        <h2 class="mb-0" th:text="${discontinued} ? 'Discontinued parts' : 'Inventory'">Inventory</h2>
+        <div class="d-flex gap-2">
+            <a th:if="${!discontinued}" th:href="@{/parts(discontinued=true)}" class="btn btn-outline-secondary">Show discontinued</a>
+            <a th:if="${discontinued}" th:href="@{/parts}" class="btn btn-outline-secondary">Back to active parts</a>
+            <a th:href="@{/parts/add}" class="btn btn-accent"><i class="bi bi-plus-lg"></i> Add spare part</a>
+        </div>
     </div>
 
     <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
     <div th:if="${warningMessage}" class="alert alert-warning" th:text="${warningMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
-    <div th:if="${lowStockCount > 0}" class="alert alert-warning d-flex align-items-center">
+    <div th:if="${!discontinued and lowStockCount > 0}" class="alert alert-warning d-flex align-items-center">
         <i class="bi bi-exclamation-triangle me-2"></i>
         <span th:text="${lowStockCount} + ' part(s) are at or below their reorder level.'"></span>
     </div>
@@ -22,27 +25,22 @@
     <div class="card mb-3">
         <div class="card-body">
             <form th:action="@{/parts}" method="get" class="d-flex gap-2">
+                <input type="hidden" name="discontinued" th:value="${discontinued}">
                 <input type="text" name="search" class="form-control" placeholder="Search by code, name, brand, category"
                        th:value="${searchTerm}">
                 <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Search</button>
+                <a th:href="@{/parts(discontinued=${discontinued})}" class="btn btn-outline-secondary">Clear</a>
             </form>
         </div>
     </div>
 
     <div class="card">
         <div class="table-responsive">
-            <table class="table table-hover mb-0">
+            <table class="table table-hover align-middle mb-0">
                 <thead>
                 <tr>
-                    <th>Code</th>
-                    <th>Name</th>
-                    <th>Category</th>
-                    <th>Brand</th>
-                    <th>Price</th>
-                    <th>Stock</th>
-                    <th>Status</th>
-                    <th>Location</th>
-                    <th></th>
+                    <th>Code</th><th>Name</th><th>Category</th><th>Brand</th><th>Price</th>
+                    <th>Stock</th><th>Status</th><th>Location</th><th></th>
                 </tr>
                 </thead>
                 <tbody>
@@ -51,29 +49,25 @@
                     <td th:text="${part.name}"></td>
                     <td th:text="${part.category}"></td>
                     <td th:text="${part.brand}"></td>
-                    <td th:text="'Rs. ' + ${part.price}"></td>
+                    <td th:text="'Rs. ' + ${#numbers.formatDecimal(part.price,1,'COMMA',2,'POINT')}"></td>
                     <td th:text="${part.stockQuantity}"></td>
                     <td>
-                        <span th:if="${part.outOfStock}" class="badge badge-out-stock">Out of stock</span>
-                        <span th:if="${part.lowStock and !part.outOfStock}" class="badge badge-low-stock">Low stock</span>
-                        <span th:if="${!part.lowStock}" class="badge badge-in-stock">In stock</span>
+                        <span th:if="${discontinued}" class="badge bg-secondary">Discontinued</span>
+                        <span th:if="${!discontinued and part.outOfStock}" class="badge badge-out-stock">Out of stock</span>
+                        <span th:if="${!discontinued and part.lowStock and !part.outOfStock}" class="badge badge-low-stock">Low stock</span>
+                        <span th:if="${!discontinued and !part.lowStock}" class="badge badge-in-stock">In stock</span>
                     </td>
                     <td th:text="${part.location}"></td>
-                    <td class="text-end">
-                        <a th:href="@{/parts/history/{id}(id=${part.id})}" class="btn btn-sm btn-outline-secondary btn-icon" title="View history">
-                            <i class="bi bi-clock-history"></i>
-                        </a>
-                        <a th:href="@{/parts/adjust/{id}(id=${part.id})}" class="btn btn-sm btn-outline-secondary btn-icon" title="Adjust stock">
-                            <i class="bi bi-sliders"></i>
-                        </a>
-                        <a th:href="@{/parts/edit/{id}(id=${part.id})}" class="btn btn-sm btn-outline-secondary btn-icon" title="Edit">
-                            <i class="bi bi-pencil"></i>
-                        </a>
-                        <form th:action="@{/parts/delete/{id}(id=${part.id})}" method="post" class="d-inline"
-                              onsubmit="return confirm('Delete this part?');">
-                            <button type="submit" class="btn btn-sm btn-outline-danger btn-icon" title="Delete">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                    <td class="text-end text-nowrap">
+                        <a th:href="@{/parts/history/{id}(id=${part.id})}" class="btn btn-sm btn-outline-secondary btn-icon" title="View history"><i class="bi bi-clock-history"></i></a>
+                        <th:block th:if="${!discontinued}">
+                            <a th:href="@{/parts/adjust/{id}(id=${part.id})}" class="btn btn-sm btn-outline-secondary btn-icon" title="Adjust stock"><i class="bi bi-sliders"></i></a>
+                            <a th:href="@{/parts/edit/{id}(id=${part.id})}" class="btn btn-sm btn-outline-secondary btn-icon" title="Edit"><i class="bi bi-pencil"></i></a>
+                            <a th:href="@{/parts/delete/{id}(id=${part.id})}" class="btn btn-sm btn-outline-danger btn-icon" title="Delete"><i class="bi bi-trash"></i></a>
+                        </th:block>
+                        <form th:if="${discontinued}" th:action="@{/parts/restore/{id}(id=${part.id})}" method="post" class="d-inline"
+                              onsubmit="return confirm('Restore this part to the active inventory?');">
+                            <button type="submit" class="btn btn-sm btn-outline-success">Restore</button>
                         </form>
                     </td>
                 </tr>

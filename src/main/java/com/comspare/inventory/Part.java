@@ -57,6 +57,10 @@ public class Part {
     @Column(name = "compatible_with", length = 500)
     private String compatibleWith;
 
+    // false = discontinued ("deleted"): hidden from lists/dropdowns, kept for history and old orders
+    @Column(name = "is_active", nullable = false)
+    private Boolean active = true;
+
     public boolean isLowStock() {
         return stockQuantity != null && reorderLevel != null && stockQuantity <= reorderLevel;
     }

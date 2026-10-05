@@ -16,34 +16,22 @@ public class ReorderUpdateController {
     }
 
     @PostMapping("/reports/reorder-prediction/update")
-    public String updateReorderLevel(
-            @RequestParam String productCode,
-            @RequestParam int newReorderLevel,
-            RedirectAttributes redirectAttributes) {
-
-        String sql =
-                "UPDATE parts SET reorder_level = ? " +
-                        "WHERE product_code = ?";
-
-        int rowsAffected = jdbcTemplate.update(
-                sql,
-                newReorderLevel,
-                productCode
-        );
-
-        if (rowsAffected > 0) {
-            redirectAttributes.addFlashAttribute(
-                    "successMessage",
-                    "Reorder level for " + productCode
-                            + " updated to " + newReorderLevel + "."
-            );
-        } else {
-            redirectAttributes.addFlashAttribute(
-                    "errorMessage",
-                    "Could not find part " + productCode + " to update."
-            );
+    public String updateReorderLevel(@RequestParam String productCode,
+                                     @RequestParam int newReorderLevel,
+                                     RedirectAttributes redirectAttributes) {
+        if (newReorderLevel < 0) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Reorder level cannot be negative.");
+            return "redirect:/reports/reorder-prediction";
         }
+        int rows = jdbcTemplate.update(
+                "UPDATE parts SET reorder_level = ? WHERE product_code = ?", newReorderLevel, productCode);
 
+        if (rows > 0) {
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Reorder level for " + productCode + " updated to " + newReorderLevel + ".");
+        } else {
+            redirectAttributes.addFlashAttribute("errorMessage", "Could not find part " + productCode + " to update.");
+        }
         return "redirect:/reports/reorder-prediction";
     }
 }

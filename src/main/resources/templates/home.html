@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
+<head><title>Home</title></head>
+<body>
+<section>
+
+    <div class="mb-4">
+        <h2 class="mb-1">Welcome, <span sec:authentication="name">user</span></h2>
+        <p class="text-muted">LankaTech Spare Parts Management System</p>
+    </div>
+
+    <div class="row g-3 mb-4" sec:authorize="hasAnyRole('ADMIN','INVENTORY_SUPERVISOR','STORE_KEEPER','OPERATIONS_MANAGER')">
+        <div class="col-md-3"><div class="card"><div class="card-body">
+            <div class="text-muted small">Spare parts</div>
+            <div class="fs-3 fw-semibold" th:text="${totalParts}">0</div>
+        </div></div></div>
+        <div class="col-md-3"><div class="card"><div class="card-body">
+            <div class="text-muted small">Low / out of stock</div>
+            <div class="fs-3 fw-semibold" th:text="${lowStockCount}">0</div>
+        </div></div></div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-4 col-lg-3" sec:authorize="hasAnyRole('ADMIN','INVENTORY_SUPERVISOR','STORE_KEEPER','OPERATIONS_MANAGER')">
+            <a th:href="@{/parts}" class="text-decoration-none"><div class="card home-card h-100"><div class="card-body">
+                <i class="bi bi-box-seam fs-3"></i><h5 class="mt-2">Inventory</h5><p class="text-muted small mb-0">Parts, stock, adjustments, history</p>
+            </div></div></a></div>
+        <div class="col-md-4 col-lg-3" sec:authorize="hasAnyRole('ADMIN','CUSTOMER_SERVICE_EXECUTIVE','OPERATIONS_MANAGER')">
+            <a th:href="@{/orders}" class="text-decoration-none"><div class="card home-card h-100"><div class="card-body">
+                <i class="bi bi-cart-check fs-3"></i><h5 class="mt-2">Orders</h5><p class="text-muted small mb-0">Customer orders and sales</p>
+            </div></div></a></div>
+        <div class="col-md-4 col-lg-3" sec:authorize="hasAnyRole('ADMIN','INVENTORY_SUPERVISOR','OPERATIONS_MANAGER')">
+            <a th:href="@{/suppliers}" class="text-decoration-none"><div class="card home-card h-100"><div class="card-body">
+                <i class="bi bi-truck fs-3"></i><h5 class="mt-2">Suppliers</h5><p class="text-muted small mb-0">Supplier records</p>
+            </div></div></a></div>
+        <div class="col-md-4 col-lg-3" sec:authorize="hasAnyRole('ADMIN','INVENTORY_SUPERVISOR','OPERATIONS_MANAGER')">
+            <a th:href="@{/purchase-orders}" class="text-decoration-none"><div class="card home-card h-100"><div class="card-body">
+                <i class="bi bi-clipboard-check fs-3"></i><h5 class="mt-2">Purchase Orders</h5><p class="text-muted small mb-0">Order and receive stock</p>
+            </div></div></a></div>
+        <div class="col-md-4 col-lg-3" sec:authorize="hasAnyRole('ADMIN','FINANCE_OFFICER')">
+            <a th:href="@{/invoices}" class="text-decoration-none"><div class="card home-card h-100"><div class="card-body">
+                <i class="bi bi-receipt fs-3"></i><h5 class="mt-2">Billing</h5><p class="text-muted small mb-0">Invoices and payments</p>
+            </div></div></a></div>
+        <div class="col-md-4 col-lg-3" sec:authorize="hasAnyRole('ADMIN','CUSTOMER_SERVICE_EXECUTIVE','INVENTORY_SUPERVISOR')">
+            <a th:href="@{/returns}" class="text-decoration-none"><div class="card home-card h-100"><div class="card-body">
+                <i class="bi bi-arrow-return-left fs-3"></i><h5 class="mt-2">Returns</h5><p class="text-muted small mb-0">Returns and warranty claims</p>
+            </div></div></a></div>
+        <div class="col-md-4 col-lg-3" sec:authorize="hasAnyRole('ADMIN','OPERATIONS_MANAGER','FINANCE_OFFICER','INVENTORY_SUPERVISOR')">
+            <a th:href="@{/reports}" class="text-decoration-none"><div class="card home-card h-100"><div class="card-body">
+                <i class="bi bi-graph-up fs-3"></i><h5 class="mt-2">Reports</h5><p class="text-muted small mb-0">Live reports with PDF export</p>
+            </div></div></a></div>
+        <div class="col-md-4 col-lg-3" sec:authorize="hasRole('ADMIN')">
+            <a th:href="@{/users}" class="text-decoration-none"><div class="card home-card h-100"><div class="card-body">
+                <i class="bi bi-people fs-3"></i><h5 class="mt-2">Users</h5><p class="text-muted small mb-0">Accounts, roles, audit trail</p>
+            </div></div></a></div>
+    </div>
+
+</section>
+</body>
+</html>

@@ -7,8 +7,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
-
 
 @Configuration
 @EnableMethodSecurity
@@ -20,32 +18,31 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(
-            HttpSecurity http) throws Exception {
-
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/login", "/css/**", "/js/**", "/images/**", "/error").permitAll()
 
-                        .requestMatchers(
-                                "/login",
-                                "/css/**",
-                                "/js/**"
-                        ).permitAll()
+                        .requestMatchers("/users/**", "/roles/**").hasRole("ADMIN")
+                        .requestMatchers("/invoices/**").hasAnyRole("ADMIN", "FINANCE_OFFICER")
+                        .requestMatchers("/orders/**").hasAnyRole("ADMIN", "CUSTOMER_SERVICE_EXECUTIVE", "OPERATIONS_MANAGER")
+                        .requestMatchers("/returns/**").hasAnyRole("ADMIN", "CUSTOMER_SERVICE_EXECUTIVE", "INVENTORY_SUPERVISOR")
+                        .requestMatchers("/suppliers/**", "/purchase-orders/**", "/supplier-performance/**")
+                        .hasAnyRole("ADMIN", "INVENTORY_SUPERVISOR", "OPERATIONS_MANAGER")
+                        .requestMatchers("/parts/**")
+                        .hasAnyRole("ADMIN", "INVENTORY_SUPERVISOR", "STORE_KEEPER", "OPERATIONS_MANAGER")
+                        .requestMatchers("/reports/**")
+                        .hasAnyRole("ADMIN", "OPERATIONS_MANAGER", "FINANCE_OFFICER", "INVENTORY_SUPERVISOR")
 
-                        .requestMatchers("/users/**")
-                        .hasRole("ADMIN")
-
-                        .anyRequest()
-                        .authenticated()
+                        .anyRequest().authenticated()
                 )
-
                 .formLogin(form -> form
                         .loginPage("/login")
-                        .defaultSuccessUrl("/users", true)
+                        .defaultSuccessUrl("/", true)   // home page: every role can open it
                         .permitAll()
                 )
-
                 .logout(logout -> logout
+                        .logoutUrl("/logout")           // POST only (the navbar uses a form)
                         .logoutSuccessUrl("/login?logout")
                         .permitAll()
                 );
@@ -53,3 +50,4 @@ public class SecurityConfig {
         return http.build();
     }
 }
+

@@ -1042,6 +1042,350 @@ INNER JOIN parts p
 ORDER BY o.id, oi.id;
 GO
 
+USE ComSpareDB;
+GO
+
+/* ================================================================
+   PART C (COMPLETION) — SEED DATA FOR TABLES THAT HAD < 5 ROWS
+   Run this AFTER your original script (roles/users/parts/suppliers
+   /orders/order_items already seeded).
+   ================================================================ */
+
+/* ---- Top up USERS to 5 rows (only 1 existed) ---- */
+INSERT INTO users (name, email, password_hash, role_id)
+VALUES
+('Nadeesha Perera',  'nadeesha@comspare.com', '$2a$10$exampleBCryptHash01', 2),
+('Kasun Jayasinghe', 'kasun.j@comspare.com',  '$2a$10$exampleBCryptHash02', 3),
+('Chamari Silva',    'chamari@comspare.com',  '$2a$10$exampleBCryptHash03', 4),
+('Ruwan Fernando',   'ruwan@comspare.com',    '$2a$10$exampleBCryptHash04', 5),
+('Dilani Wickrama',  'dilani@comspare.com',   '$2a$10$exampleBCryptHash05', 6);
+GO
+
+/* ---- Top up SUPPLIERS to 5 rows (only 3 existed) ---- */
+INSERT INTO suppliers (supplier_name, contact_person, phone, email, address, status)
+VALUES
+('Precision Auto Imports', 'Sanduni Rathnayake', '0776543210', 'sales@precisionauto.lk', 'Negombo, Sri Lanka', 'ACTIVE'),
+('Ceylon Auto Traders',    'Harsha Bandara',      '0701122334', 'info@ceylonauto.lk',     'Galle, Sri Lanka',   'ACTIVE');
+GO
+
+/* ---- AUDIT_LOGS (0 rows before) ---- */
+INSERT INTO audit_logs (user_id, action, table_name, record_id, old_value, new_value)
+VALUES
+(1, 'UPDATE', 'parts',   1, 'stock_quantity=28', 'stock_quantity=25'),
+(2, 'INSERT', 'orders',  5, NULL,                 'status=PENDING'),
+(3, 'UPDATE', 'orders',  5, 'status=PENDING',      'status=CANCELLED'),
+(1, 'UPDATE', 'parts',   3, 'stock_quantity=17',  'stock_quantity=15'),
+(4, 'DELETE', 'return_requests', 2, 'status=PENDING', NULL);
+GO
+
+/* ---- STOCK_ADJUSTMENTS (0 rows before) ---- */
+INSERT INTO stock_adjustments (part_id, change_amount, reason, adjusted_by)
+VALUES
+(1, -2, 'Damaged in warehouse',      'Zee'),
+(2, 10, 'New delivery received',     'Zee'),
+(3, -1, 'Sold via walk-in customer', 'Nadeesha Perera'),
+(4,  5, 'Stock count correction',    'Zee'),
+(5, -3, 'Return processed as damaged','Kasun Jayasinghe');
+GO
+
+/* ---- PART_HISTORY (0 rows before) ---- */
+INSERT INTO part_history (part_id, event_type, quantity, notes)
+VALUES
+(1, 'DAMAGED',  2, 'Two brake pad sets damaged during storage'),
+(2, 'RECEIVED', 10, 'Restocked from Lanka Motor Supplies'),
+(3, 'SOLD',     1, 'Sold in ORD003'),
+(4, 'ADJUSTED', 5, 'Manual correction after stock count'),
+(5, 'RETURNED', 3, 'Returned by customer, found damaged');
+GO
+
+/* ---- PURCHASE_ORDERS (0 rows before) ----
+   Note: supplier_id 1 used twice on purpose, for the HAVING query below */
+INSERT INTO purchase_orders (order_number, supplier_id, order_date, expected_delivery_date, delivery_date, status, notes)
+VALUES
+('PO001', 1, '2026-08-01', '2026-08-10', '2026-08-09', 'RECEIVED', 'Routine brake pad restock'),
+('PO002', 1, '2026-08-15', '2026-08-25', NULL,          'PENDING',  'Battery restock'),
+('PO003', 2, '2026-08-05', '2026-08-15', '2026-08-14', 'RECEIVED', 'Filter restock'),
+('PO004', 3, '2026-08-20', '2026-08-30', NULL,          'APPROVED', 'Spark plug restock'),
+('PO005', 4, '2026-08-22', '2026-09-01', NULL,          'PENDING',  'Air filter restock');
+GO
+
+/* ---- PURCHASE_ORDER_ITEMS (0 rows before) ---- */
+INSERT INTO purchase_order_items (purchase_order_id, part_id, ordered_quantity, received_quantity, unit_cost)
+VALUES
+(1, 1, 20, 20, 9500.00),
+(2, 3, 10,  0, 21000.00),
+(3, 2, 50, 50, 2600.00),
+(4, 4, 30,  0, 4800.00),
+(5, 5, 25,  0, 3300.00);
+GO
+
+/* ---- RETURN_REQUESTS (0 rows before) ---- */
+INSERT INTO return_requests (customer_name, customer_contact, part_id, quantity, return_reason, claim_type, status, resolution, decision_notes, inventory_processed)
+VALUES
+('Kasun Perera',       'kasun@example.com',       1, 1, 'Wrong size supplied',          'RETURN',   'COMPLETED',  'REFUNDED',   'Verified against invoice', 1),
+('Nimal Silva',        'nimal@example.com',       3, 1, 'Battery not holding charge',   'WARRANTY', 'APPROVED',   'REPLACED',   'Within 6-month warranty',  0),
+('Tharindu Fernando',  'tharindu@example.com',    5, 1, 'Filter arrived damaged',       'RETURN',   'PENDING',    NULL,         NULL,                        0),
+('Amal Perera',        'amal@example.com',        4, 1, 'Ordered wrong spark plug set', 'RETURN',   'REJECTED',   'DENIED',     'Item was used, not eligible',0),
+('Sahan Jayasuriya',   'sahan@example.com',       5, 1, 'Changed mind after purchase',  'RETURN',   'PROCESSING', NULL,         'Awaiting inspection',       0);
+GO
+
+/* ---- INVOICES (0 rows before) ---- */
+INSERT INTO invoices (invoice_number, order_id, customer_name, total_amount, amount_paid, payment_status)
+VALUES
+('INV001', 1, 'Kasun Perera',      25000.00, 25000.00, 'PAID'),
+('INV002', 2, 'Nimal Silva',       35000.00, 20000.00, 'PARTIAL'),
+('INV003', 3, 'Tharindu Fernando', 28500.00, 0.00,     'PENDING'),
+('INV004', 4, 'Amal Perera',       11000.00, 11000.00, 'PAID'),
+('INV005', 5, 'Sahan Jayasuriya',  4500.00,  0.00,     'PENDING');
+GO
+
+/* ---- PAYMENTS (0 rows before) ---- */
+INSERT INTO payments (invoice_id, amount, payment_method, reference_no)
+VALUES
+(1, 25000.00, 'CARD',   'TXN-0001'),
+(2, 20000.00, 'ONLINE', 'TXN-0002'),
+(4, 11000.00, 'CASH',   NULL),
+(2, 5000.00,  'CASH',   'TXN-0003');
+GO
+-- NOTE: CK_payments_amount requires amount > 0, so the 0.00 row above will be
+-- REJECTED by the CHECK constraint. Delete that line before running, it was
+-- left in deliberately so you can see the constraint firing if you want a
+-- screenshot of a rejected insert for your report.
+
+
+/* ================================================================
+   PART D — 5 REQUIRED QUERIES (Simple SELECT, JOIN, Aggregation,
+   GROUP BY/HAVING, Subquery)
+   ================================================================ */
+
+-- 1. Simple SELECT — parts at or below their reorder level (low-stock alert)
+SELECT product_code, name, stock_quantity, reorder_level
+FROM parts
+WHERE stock_quantity <= reorder_level;
+
+-- 2. JOIN — order line items with customer and part detail
+SELECT o.order_number, o.customer_name, p.name AS part_name, oi.quantity, oi.subtotal
+FROM orders o
+INNER JOIN order_items oi ON o.id = oi.order_id
+INNER JOIN parts p        ON oi.part_id = p.id
+ORDER BY o.order_number;
+
+-- 3. Aggregation — overall sales summary (no grouping)
+SELECT COUNT(*) AS total_orders,
+       SUM(total_amount) AS total_revenue,
+       AVG(total_amount) AS avg_order_value
+FROM orders;
+
+-- 4. GROUP BY / HAVING — suppliers with more than 1 purchase order
+SELECT s.supplier_name, COUNT(po.id) AS purchase_order_count
+FROM purchase_orders po
+INNER JOIN suppliers s ON po.supplier_id = s.id
+GROUP BY s.supplier_name
+HAVING COUNT(po.id) > 1;
+
+-- 5. Subquery — parts priced above the average part price
+SELECT name, price
+FROM parts
+WHERE price > (SELECT AVG(price) FROM parts);
+
+
+/* ================================================================
+   PART E — STORED PROCEDURE
+   Adjusts stock for a part, guards against negative stock,
+   and writes both a stock_adjustments row and a part_history row.
+   ================================================================ */
+
+CREATE PROCEDURE sp_AdjustStock
+    @PartID BIGINT,
+    @ChangeAmount INT,
+    @Reason VARCHAR(50),
+    @AdjustedBy VARCHAR(100)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM parts WHERE id = @PartID)
+    BEGIN
+        RAISERROR('Part not found.', 16, 1);
+        RETURN;
+    END
+
+    DECLARE @CurrentStock INT;
+    SELECT @CurrentStock = stock_quantity FROM parts WHERE id = @PartID;
+
+    IF (@CurrentStock + @ChangeAmount) < 0
+    BEGIN
+        RAISERROR('Adjustment would result in negative stock.', 16, 1);
+        RETURN;
+    END
+
+    BEGIN TRANSACTION;
+
+    UPDATE parts
+    SET stock_quantity = stock_quantity + @ChangeAmount
+    WHERE id = @PartID;
+
+    INSERT INTO stock_adjustments (part_id, change_amount, reason, adjusted_by)
+    VALUES (@PartID, @ChangeAmount, @Reason, @AdjustedBy);
+
+    INSERT INTO part_history (part_id, event_type, quantity, notes)
+    VALUES (
+        @PartID,
+        CASE WHEN @ChangeAmount >= 0 THEN 'RECEIVED' ELSE 'ADJUSTED' END,
+        ABS(@ChangeAmount),
+        @Reason
+    );
+
+    COMMIT TRANSACTION;
+END
+GO
+
+-- Sample execution:
+EXEC sp_AdjustStock
+    @PartID = 1,
+    @ChangeAmount = -3,
+    @Reason = 'Damaged in warehouse',
+    @AdjustedBy = 'Zee';
+GO
+
+-- Verify it worked:
+SELECT id, name, stock_quantity FROM parts WHERE id = 1;
+SELECT * FROM stock_adjustments WHERE part_id = 1 ORDER BY id DESC;
+SELECT * FROM part_history WHERE part_id = 1 ORDER BY id DESC;
+
+
+/* ================================================================
+   PART F — TRIGGER
+   After a new order_item is inserted: reduce the part's stock,
+   recalculate the parent order's total_amount, and log the sale
+   into part_history automatically.
+   ================================================================ */
+
+CREATE TRIGGER trg_OrderItems_AfterInsert
+ON order_items
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE p
+    SET p.stock_quantity = p.stock_quantity - i.quantity
+    FROM parts p
+    INNER JOIN inserted i ON p.id = i.part_id;
+
+    UPDATE o
+    SET o.total_amount = (
+        SELECT SUM(subtotal) FROM order_items WHERE order_id = o.id
+    )
+    FROM orders o
+    INNER JOIN inserted i ON o.id = i.order_id;
+
+    INSERT INTO part_history (part_id, event_type, quantity, notes)
+    SELECT part_id, 'SOLD', quantity, 'Auto-logged by trg_OrderItems_AfterInsert'
+    FROM inserted;
+END
+GO
+
+-- Demonstration: add a new line item to ORD001 and watch stock + total update
+SELECT stock_quantity FROM parts WHERE id = 2;         -- BEFORE
+SELECT total_amount FROM orders WHERE id = 1;          -- BEFORE
+
+INSERT INTO order_items (order_id, part_id, quantity, unit_price, subtotal)
+VALUES (1, 2, 2, 3500.00, 7000.00);
+
+SELECT stock_quantity FROM parts WHERE id = 2;         -- AFTER (should drop by 2)
+SELECT total_amount FROM orders WHERE id = 1;          -- AFTER (should increase by 7000)
+SELECT * FROM part_history WHERE part_id = 2 ORDER BY id DESC; -- new SOLD row
+GO
+
+UPDATE users
+SET password_hash = '$2b$10$SvcocV6UnQ3SNQ8ao7YBgeiPH6RoX0msoQSWgxJpfgubTMoAyrE5K'
+WHERE email = 'admin@comspare.com';
+GO
+
+SELECT * FROM roles;
+SELECT * FROM users;
+SELECT * FROM audit_logs;
+SELECT * FROM parts;
+SELECT * FROM stock_adjustments;
+SELECT * FROM part_history;
+SELECT * FROM suppliers;
+SELECT * FROM purchase_orders;
+SELECT * FROM purchase_order_items;
+SELECT * FROM return_requests;
+SELECT * FROM orders;
+SELECT * FROM order_items;
+SELECT * FROM invoices;
+SELECT * FROM payments;
+
+/* 1. The app now reduces stock itself (and checks availability + writes part_history).
+      The old trigger did the same thing again, so every order took stock off TWICE. */
+IF OBJECT_ID('trg_OrderItems_AfterInsert', 'TR') IS NOT NULL
+    DROP TRIGGER trg_OrderItems_AfterInsert;
+GO
+
+/* 2. The seed users had fake password hashes, so they could never log in.
+      This gives them all the password:  Comspare@123  */
+UPDATE users
+SET password_hash = '$2b$10$WDWnWpBh4iXQcBLFyqulYuUyoMrZEUFWOdY7xr7PqG21G77f2dXsm'
+WHERE password_hash LIKE '$2a$10$exampleBCryptHash%';
+GO
+
+SELECT id, name, email FROM users;
+
+/* 1. "Delete" a part = discontinue it (kept for history, hidden from lists).
+      Adds ONE column; no foreign keys are touched. */
+IF COL_LENGTH('parts', 'is_active') IS NULL
+    ALTER TABLE parts ADD is_active BIT NOT NULL CONSTRAINT DF_parts_is_active DEFAULT 1;
+GO
+
+/* 2. Part history can now also record these events */
+ALTER TABLE part_history DROP CONSTRAINT CK_parthist_event_type;
+GO
+ALTER TABLE part_history ADD CONSTRAINT CK_parthist_event_type
+    CHECK (event_type IN ('RECEIVED','SOLD','RETURNED','ADJUSTED','DAMAGED',
+                          'CREATED','UPDATED','DISCONTINUED','RESTORED'));
+GO
+
+
+
+/* Users: soft delete (Deactivate / Reactivate) */
+IF COL_LENGTH('users', 'active') IS NULL
+    ALTER TABLE users ADD active BIT NOT NULL CONSTRAINT DF_users_active DEFAULT 1;
+GO
+
+/* Audit trail table used by the new AuditLog entity (append-only) */
+IF OBJECT_ID('audit_log', 'U') IS NULL
+CREATE TABLE audit_log (
+    id            BIGINT IDENTITY(1,1) PRIMARY KEY,
+    performed_by  VARCHAR(150) NOT NULL,
+    action        VARCHAR(60)  NOT NULL,
+    target_record VARCHAR(255) NULL,
+    old_value     VARCHAR(500) NULL,
+    new_value     VARCHAR(500) NULL,
+    logged_at     DATETIME2    NOT NULL DEFAULT SYSDATETIME()
+);
+GO
+IF OBJECT_ID('trg_audit_log_append_only', 'TR') IS NOT NULL
+    DROP TRIGGER trg_audit_log_append_only;
+GO
+CREATE TRIGGER trg_audit_log_append_only ON audit_log INSTEAD OF UPDATE, DELETE AS
+BEGIN
+    RAISERROR('audit_log is append-only: UPDATE and DELETE are not allowed.', 16, 1);
+    ROLLBACK TRANSACTION;
+END;
+GO
+
+/* Remove duplicate roles (e.g. 'Store Keeper' next to 'STORE_KEEPER') if an old script created them */
+DELETE FROM roles
+WHERE role_name IN ('Operations Manager','Inventory Supervisor','Store Keeper',
+                    'Customer Service Executive','Finance Officer')
+  AND id NOT IN (SELECT role_id FROM users);
+GO
+
+SELECT id, role_name FROM roles;
+SELECT id, name, email, active FROM users;
+GO
 
 /* ============================================================
    END OF COMSPARE DATABASE

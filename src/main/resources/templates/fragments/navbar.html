@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+
+<nav th:fragment="navbar" class="navbar navbar-expand-lg navbar-dark app-navbar sticky-top">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand" th:href="@{/}">
+            <i class="bi bi-cpu-fill me-2"></i>Comspare <span class="fw-light">Spare Parts</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="mainNav">
+            <ul class="navbar-nav me-auto" sec:authorize="isAuthenticated()">
+                <li class="nav-item" sec:authorize="hasAnyRole('ADMIN','INVENTORY_SUPERVISOR','STORE_KEEPER','OPERATIONS_MANAGER')">
+                    <a class="nav-link" th:href="@{/parts}"><i class="bi bi-box-seam me-1"></i>Inventory</a></li>
+                <li class="nav-item" sec:authorize="hasAnyRole('ADMIN','CUSTOMER_SERVICE_EXECUTIVE','OPERATIONS_MANAGER')">
+                    <a class="nav-link" th:href="@{/orders}"><i class="bi bi-cart-check me-1"></i>Orders</a></li>
+                <li class="nav-item" sec:authorize="hasAnyRole('ADMIN','INVENTORY_SUPERVISOR','OPERATIONS_MANAGER')">
+                    <a class="nav-link" th:href="@{/suppliers}"><i class="bi bi-truck me-1"></i>Suppliers</a></li>
+                <li class="nav-item" sec:authorize="hasAnyRole('ADMIN','INVENTORY_SUPERVISOR','OPERATIONS_MANAGER')">
+                    <a class="nav-link" th:href="@{/purchase-orders}"><i class="bi bi-clipboard-check me-1"></i>Purchase Orders</a></li>
+                <li class="nav-item" sec:authorize="hasAnyRole('ADMIN','FINANCE_OFFICER')">
+                    <a class="nav-link" th:href="@{/invoices}"><i class="bi bi-receipt me-1"></i>Billing</a></li>
+                <li class="nav-item" sec:authorize="hasAnyRole('ADMIN','CUSTOMER_SERVICE_EXECUTIVE','INVENTORY_SUPERVISOR')">
+                    <a class="nav-link" th:href="@{/returns}"><i class="bi bi-arrow-return-left me-1"></i>Returns</a></li>
+                <li class="nav-item" sec:authorize="hasAnyRole('ADMIN','OPERATIONS_MANAGER','FINANCE_OFFICER','INVENTORY_SUPERVISOR')">
+                    <a class="nav-link" th:href="@{/reports}"><i class="bi bi-graph-up me-1"></i>Reports</a></li>
+                <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                    <a class="nav-link" th:href="@{/users}"><i class="bi bi-people me-1"></i>Users</a></li>
+            </ul>
+            <ul class="navbar-nav ms-auto" sec:authorize="isAuthenticated()">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle me-1"></i><span sec:authentication="name">Account</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" th:href="@{/profile}">My profile</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form th:action="@{/logout}" method="post">
+                                <button type="submit" class="dropdown-item">Logout</button>
+                            </form>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<footer th:fragment="footer" class="app-footer text-center py-3 mt-auto">
+    <small>&copy; 2026 Comspare Computer Supplies (Pvt) Ltd &mdash; Spare Parts Management System</small>
+</footer>
+
+</body>
+</html>
+
+

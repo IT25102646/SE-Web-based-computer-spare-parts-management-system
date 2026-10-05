@@ -9,20 +9,14 @@
         <a th:href="@{/purchase-orders/new}" class="btn btn-accent"><i class="bi bi-plus-lg"></i> Create Purchase Order</a>
     </div>
 
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
     <div class="card">
         <div class="table-responsive">
-            <table class="table table-hover mb-0">
+            <table class="table table-hover align-middle mb-0">
                 <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Order Number</th>
-                    <th>Supplier</th>
-                    <th>Order Date</th>
-                    <th>Expected Delivery</th>
-                    <th>Delivery Date</th>
-                    <th>Status</th>
-                    <th></th>
-                </tr>
+                <tr><th>ID</th><th>Order Number</th><th>Supplier</th><th>Order Date</th><th>Expected Delivery</th><th>Delivery Date</th><th>Status</th><th></th></tr>
                 </thead>
                 <tbody>
                 <tr th:each="po : ${purchaseOrders}">
@@ -32,32 +26,28 @@
                     <td th:text="${po.orderDate}"></td>
                     <td th:text="${po.expectedDeliveryDate}"></td>
                     <td th:text="${po.deliveryDate}"></td>
-                    <td>
-<span th:text="${po.status}"
-      th:class="${po.status == 'RECEIVED'} ? 'badge badge-in-stock'
-                : (${po.status == 'CANCELLED'} ? 'badge badge-out-stock' : 'badge badge-pending')">PENDING</span>
-                    </td>
-                    <td class="text-end">
-                        <a th:href="@{/purchase-orders/edit/{id}(id=${po.id})}" class="btn btn-sm btn-outline-secondary btn-icon" title="Edit">
-                            <i class="bi bi-pencil"></i>
-                        </a>
-                        <form th:if="${po.status != 'RECEIVED'}" th:action="@{/purchase-orders/confirm/{id}(id=${po.id})}" method="post" class="d-inline">
-                            <button type="submit" class="btn btn-sm btn-outline-success btn-icon" title="Confirm delivery"
-                                    onclick="return confirm('Confirm this delivery?');">
-                                <i class="bi bi-truck"></i>
-                            </button>
+                    <td><span th:text="${po.status}"
+                              th:class="${po.status == 'RECEIVED'} ? 'badge badge-in-stock'
+                                      : (${po.status == 'CANCELLED'} ? 'badge badge-out-stock' : 'badge badge-pending')"></span></td>
+                    <td class="text-end text-nowrap">
+                        <a th:href="@{/purchase-orders/view/{id}(id=${po.id})}" class="btn btn-sm btn-outline-primary btn-icon" title="View"><i class="bi bi-eye"></i></a>
+                        <a th:if="${po.status == 'PENDING' or po.status == 'APPROVED'}" th:href="@{/purchase-orders/edit/{id}(id=${po.id})}"
+                           class="btn btn-sm btn-outline-secondary btn-icon" title="Edit"><i class="bi bi-pencil"></i></a>
+                        <form th:if="${po.status == 'PENDING' or po.status == 'APPROVED'}" th:action="@{/purchase-orders/confirm/{id}(id=${po.id})}" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-success btn-icon" title="Confirm delivery (adds stock)"
+                                    onclick="return confirm('Confirm this delivery? The ordered quantities will be added to inventory stock.');"><i class="bi bi-truck"></i></button>
                         </form>
-                        <form th:if="${po.status != 'RECEIVED' and po.status != 'CANCELLED'}" th:action="@{/purchase-orders/cancel/{id}(id=${po.id})}" method="post" class="d-inline">
-                            <button type="submit" class="btn btn-sm btn-outline-danger btn-icon" title="Cancel"
-                                    onclick="return confirm('Cancel this purchase order?');">
-                                <i class="bi bi-x-lg"></i>
-                            </button>
+                        <form th:if="${po.status == 'PENDING' or po.status == 'APPROVED'}" th:action="@{/purchase-orders/cancel/{id}(id=${po.id})}" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-warning btn-icon" title="Cancel"
+                                    onclick="return confirm('Cancel this purchase order?');"><i class="bi bi-x-lg"></i></button>
+                        </form>
+                        <form th:if="${po.status != 'RECEIVED'}" th:action="@{/purchase-orders/delete/{id}(id=${po.id})}" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger btn-icon" title="Delete"
+                                    onclick="return confirm('Delete this purchase order?');"><i class="bi bi-trash"></i></button>
                         </form>
                     </td>
                 </tr>
-                <tr th:if="${#lists.isEmpty(purchaseOrders)}">
-                    <td colspan="8" class="text-center py-4">No purchase orders found.</td>
-                </tr>
+                <tr th:if="${#lists.isEmpty(purchaseOrders)}"><td colspan="8" class="text-center py-4">No purchase orders found.</td></tr>
                 </tbody>
             </table>
         </div>

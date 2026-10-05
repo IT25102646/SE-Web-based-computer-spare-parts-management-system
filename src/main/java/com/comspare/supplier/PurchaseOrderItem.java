@@ -14,67 +14,37 @@ public class PurchaseOrderItem {
     @JoinColumn(name = "purchase_order_id", nullable = false)
     private PurchaseOrder purchaseOrder;
 
-    /*
-     * ID of the spare part from the Inventory module.
-     */
+    /** ID of the spare part from the Inventory module. */
     @Column(name = "part_id", nullable = false)
     private Long partId;
 
-    @Column(nullable = false)
+    @Column(name = "ordered_quantity", nullable = false)
     private Integer orderedQuantity;
 
+    @Column(name = "received_quantity")
     private Integer receivedQuantity;
 
+    @Column(name = "unit_cost")
     private Double unitCost;
 
     public PurchaseOrderItem() {
     }
 
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public PurchaseOrder getPurchaseOrder() { return purchaseOrder; }
+    public void setPurchaseOrder(PurchaseOrder purchaseOrder) { this.purchaseOrder = purchaseOrder; }
 
-    public PurchaseOrder getPurchaseOrder() {
-        return purchaseOrder;
-    }
+    public Long getPartId() { return partId; }
+    public void setPartId(Long partId) { this.partId = partId; }
 
-    public void setPurchaseOrder(PurchaseOrder purchaseOrder) {
-        this.purchaseOrder = purchaseOrder;
-    }
+    public Integer getOrderedQuantity() { return orderedQuantity; }
+    public void setOrderedQuantity(Integer orderedQuantity) { this.orderedQuantity = orderedQuantity; }
 
-    public Long getPartId() {
-        return partId;
-    }
+    public Integer getReceivedQuantity() { return receivedQuantity; }
+    public void setReceivedQuantity(Integer receivedQuantity) { this.receivedQuantity = receivedQuantity; }
 
-    public void setPartId(Long partId) {
-        this.partId = partId;
-    }
-
-    public Integer getOrderedQuantity() {
-        return orderedQuantity;
-    }
-
-    public void setOrderedQuantity(Integer orderedQuantity) {
-        this.orderedQuantity = orderedQuantity;
-    }
-
-    public Integer getReceivedQuantity() {
-        return receivedQuantity;
-    }
-
-    public void setReceivedQuantity(Integer receivedQuantity) {
-        this.receivedQuantity = receivedQuantity;
-    }
-
-    public Double getUnitCost() {
-        return unitCost;
-    }
-
-    public void setUnitCost(Double unitCost) {
-        this.unitCost = unitCost;
-    }
+    public Double getUnitCost() { return unitCost; }
+    public void setUnitCost(Double unitCost) { this.unitCost = unitCost; }
 }

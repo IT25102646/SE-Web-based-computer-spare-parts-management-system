@@ -16,10 +16,8 @@
                 <div class="row g-3">
                     <div class="col-md-4">
                         <label class="form-label">Product code</label>
-                        <input type="text" class="form-control" th:field="*{productCode}"
-                               th:readonly="${part.id != null}">
-                        <div class="text-danger small" th:if="${#fields.hasErrors('productCode')}"
-                             th:errors="*{productCode}"></div>
+                        <input type="text" class="form-control" th:field="*{productCode}" th:readonly="${part.id != null}">
+                        <div class="text-danger small" th:if="${#fields.hasErrors('productCode')}" th:errors="*{productCode}"></div>
                     </div>
                     <div class="col-md-8">
                         <label class="form-label">Part name</label>
@@ -29,8 +27,7 @@
 
                     <div class="col-md-4">
                         <label class="form-label">Category</label>
-                        <input type="text" class="form-control" th:field="*{category}"
-                               placeholder="RAM, SSD, Motherboard...">
+                        <input type="text" class="form-control" th:field="*{category}" placeholder="RAM, SSD, Motherboard...">
                         <div class="text-danger small" th:if="${#fields.hasErrors('category')}" th:errors="*{category}"></div>
                     </div>
                     <div class="col-md-4">
@@ -49,8 +46,7 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Stock quantity</label>
-                        <input type="number" class="form-control" th:field="*{stockQuantity}"
-                               th:readonly="${part.id != null}">
+                        <input type="number" class="form-control" th:field="*{stockQuantity}" th:readonly="${part.id != null}">
                         <div class="text-danger small" th:if="${#fields.hasErrors('stockQuantity')}" th:errors="*{stockQuantity}"></div>
                         <div class="form-text" th:if="${part.id != null}">Use "Adjust stock" from the inventory list to change quantity after creation.</div>
                     </div>
@@ -62,8 +58,7 @@
 
                     <div class="col-md-6">
                         <label class="form-label">Storage location</label>
-                        <input type="text" class="form-control" th:field="*{location}"
-                               placeholder="e.g. Shelf A3">
+                        <input type="text" class="form-control" th:field="*{location}" placeholder="e.g. Shelf A3">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Compatible with</label>
@@ -73,6 +68,14 @@
                     <div class="col-12">
                         <label class="form-label">Specifications</label>
                         <textarea class="form-control" rows="3" th:field="*{specifications}"></textarea>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label" th:text="${part.id != null} ? 'Reason for this change *' : 'Reason for adding this part *'">Reason *</label>
+                        <input type="text" name="reason" class="form-control" maxlength="200" required
+                               th:value="${reason}"
+                               placeholder="e.g. New product line / Supplier price change / Corrected specification">
+                        <div class="form-text">Saved in the part history.</div>
                     </div>
                 </div>
 

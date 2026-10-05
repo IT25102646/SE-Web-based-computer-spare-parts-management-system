@@ -1,11 +1,11 @@
 package com.comspare.user;
 
-import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserService {
@@ -13,150 +13,138 @@ public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
-    private final AuditLogService audit;
 
-    public UserService(UserRepository userRepository, RoleRepository roleRepository,
-                       PasswordEncoder passwordEncoder, AuditLogService audit) {
+    public UserService(UserRepository userRepository,
+                       RoleRepository roleRepository,
+                       PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
-        this.audit = audit;
     }
 
-    // ---------- READ ----------
-    public List<User> findAll() {
-        return userRepository.findAll(Sort.by("name"));
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
     }
 
-    public User get(Long id) {
+    public List<Role> getAllRoles() {
+        return roleRepository.findAll();
+    }
+
+    public User getUserById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
     }
 
-    public User getByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
     }
 
-    public List<Role> findRoles() {
-        return roleRepository.findAll(Sort.by("id"));
-    }
-
-    // ---------- CREATE ----------
+    // ---------- create ----------
     @Transactional
-    public User create(UserForm form) {
-        String email = normalise(form.getEmail());
-        if (userRepository.existsByEmail(email)) {
-            throw new IllegalArgumentException("A user with this email already exists");
+    public User createUser(User user, Long roleId) {
+        requireNameAndEmail(user);
+        checkPassword(user.getPasswordHash());
+        user.setEmail(user.getEmail().trim().toLowerCase());
+        if (userRepository.existsByEmail(user.getEmail())) {
+            throw new IllegalArgumentException("Email already exists.");
         }
-        Role role = findRole(form.getRoleId());
-        User user = new User(form.getName().trim(), email,
-                passwordEncoder.encode(form.getPassword()), role);
-        userRepository.save(user);
-
-        audit.log("USER_CREATED", describe(user), null,
-                "name=" + user.getName() + ", role=" + role.getRoleName());
-        return user;
+        user.setRole(roleRepository.findById(roleId)
+                .orElseThrow(() -> new IllegalArgumentException("Role not found")));
+        user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
+        user.setActive(true);
+        return userRepository.save(user);
     }
 
-    // ---------- UPDATE ----------
+    // ---------- update ----------
     @Transactional
-    public User update(Long id, UserForm form, String actingEmail) {
-        User user = get(id);
-        String email = normalise(form.getEmail());
-        if (userRepository.existsByEmailAndIdNot(email, id)) {
-            throw new IllegalArgumentException("Another user already has this email");
-        }
-        Role newRole = findRole(form.getRoleId());
-        boolean roleChanged = !user.getRole().getId().equals(newRole.getId());
+    public User updateUser(Long id, User updated, Long roleId) {
+        User existing = getUserById(id);
+        requireNameAndEmail(updated);
 
-        if (roleChanged) {
-            if (user.getEmail().equalsIgnoreCase(actingEmail)) {
-                throw new IllegalStateException("You cannot change your own role");
-            }
-            if (isAdmin(user) && user.isActive() && userRepository.countActiveAdmins() <= 1) {
-                throw new IllegalStateException("You cannot remove the role of the last active Admin");
-            }
+        String email = updated.getEmail().trim().toLowerCase();
+        Optional<User> clash = userRepository.findByEmail(email);
+        if (clash.isPresent() && !clash.get().getId().equals(id)) {
+            throw new IllegalArgumentException("Email already exists.");
         }
 
-        String before = "name=" + user.getName() + ", email=" + user.getEmail()
-                + ", role=" + user.getRole().getRoleName();
+        Role newRole = roleRepository.findById(roleId)
+                .orElseThrow(() -> new IllegalArgumentException("Role not found"));
 
-        user.setName(form.getName().trim());
-        user.setEmail(email);
-        user.setRole(newRole);
-
-        boolean passwordReset = form.getPassword() != null && !form.getPassword().isBlank();
-        if (passwordReset) {
-            user.setPasswordHash(passwordEncoder.encode(form.getPassword()));
+        boolean demotingAdmin = isAdmin(existing) && existing.isActive()
+                && !"ADMIN".equalsIgnoreCase(newRole.getRoleName());
+        if (demotingAdmin && userRepository.countByRoleRoleNameIgnoreCaseAndActiveTrue("ADMIN") <= 1) {
+            throw new IllegalStateException("The last active ADMIN cannot be changed to another role.");
         }
-        userRepository.save(user);
 
-        String after = "name=" + user.getName() + ", email=" + user.getEmail()
-                + ", role=" + newRole.getRoleName();
-        audit.log(roleChanged ? "ROLE_CHANGED" : "USER_UPDATED", describe(user), before, after);
-        if (passwordReset) {
-            audit.log("PASSWORD_RESET", describe(user), null, "password changed by admin");
+        existing.setName(updated.getName().trim());
+        existing.setEmail(email);
+        existing.setRole(newRole);
+
+        String password = updated.getPasswordHash();
+        if (password != null && !password.isBlank()) {
+            checkPassword(password);
+            existing.setPasswordHash(passwordEncoder.encode(password));
         }
-        return user;
+        return userRepository.save(existing);
     }
 
-    // ---------- DELETE (soft) ----------
+    // ---------- delete = deactivate (soft delete) ----------
     @Transactional
-    public void deactivate(Long id, String actingEmail) {
-        User user = get(id);
-        if (user.getEmail().equalsIgnoreCase(actingEmail)) {
-            throw new IllegalStateException("You cannot deactivate your own account");
+    public User deactivateUser(Long id, String currentUserEmail) {
+        User user = getUserById(id);
+        if (user.getEmail().equalsIgnoreCase(currentUserEmail)) {
+            throw new IllegalStateException("You cannot deactivate your own account.");
         }
-        if (isAdmin(user) && user.isActive() && userRepository.countActiveAdmins() <= 1) {
-            throw new IllegalStateException("You cannot deactivate the last active Admin");
+        if (!user.isActive()) {
+            throw new IllegalStateException("This account is already deactivated.");
+        }
+        if (isAdmin(user) && userRepository.countByRoleRoleNameIgnoreCaseAndActiveTrue("ADMIN") <= 1) {
+            throw new IllegalStateException("The last active ADMIN cannot be deactivated.");
         }
         user.setActive(false);
-        userRepository.save(user);
-        audit.log("USER_DEACTIVATED", describe(user), "ACTIVE", "INACTIVE");
+        return userRepository.save(user);
     }
 
     @Transactional
-    public void activate(Long id) {
-        User user = get(id);
+    public User reactivateUser(Long id) {
+        User user = getUserById(id);
         user.setActive(true);
-        userRepository.save(user);
-        audit.log("USER_REACTIVATED", describe(user), "INACTIVE", "ACTIVE");
+        return userRepository.save(user);
     }
 
-    // ---------- OWN PROFILE ----------
+    // ---------- own password ----------
     @Transactional
-    public void changeOwnPassword(String email, String currentPassword, String newPassword) {
-        User user = getByEmail(email);
-        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
-            throw new IllegalArgumentException("Current password is incorrect");
+    public void changePassword(String email, String current, String next, String confirm) {
+        User user = findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        if (current == null || !passwordEncoder.matches(current, user.getPasswordHash())) {
+            throw new IllegalArgumentException("Current password is incorrect.");
         }
-        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        if (next == null || !next.equals(confirm)) {
+            throw new IllegalArgumentException("New password and confirmation do not match.");
+        }
+        checkPassword(next);
+        user.setPasswordHash(passwordEncoder.encode(next));
         userRepository.save(user);
-        audit.log("PASSWORD_CHANGED", describe(user), null, "password changed by owner");
     }
 
     // ---------- helpers ----------
-    private Role findRole(Long roleId) {
-        return roleRepository.findById(roleId)
-                .orElseThrow(() -> new IllegalArgumentException("Selected role does not exist"));
-    }
-
     private boolean isAdmin(User u) {
-        return "admin".equalsIgnoreCase(u.getRole().getRoleName());
+        return "ADMIN".equalsIgnoreCase(u.getRole().getRoleName());
     }
 
-    private String normalise(String email) {
-        return email.trim().toLowerCase();
+    private void checkPassword(String p) {
+        if (p == null || p.length() < 8 || !p.matches(".*[A-Za-z].*") || !p.matches(".*\\d.*")) {
+            throw new IllegalArgumentException("Password must be at least 8 characters with a letter and a number.");
+        }
     }
 
-    private String describe(User u) {
-        return "User #" + u.getId() + " (" + u.getEmail() + ")";
-    }
-
-    /** At least 8 chars, with a letter and a digit. */
-    public static boolean isStrongPassword(String p) {
-        return p != null && p.length() >= 8
-                && p.matches(".*[A-Za-z].*") && p.matches(".*\\d.*");
+    private void requireNameAndEmail(User u) {
+        if (u.getName() == null || u.getName().isBlank()) {
+            throw new IllegalArgumentException("Name is required.");
+        }
+        if (u.getEmail() == null || u.getEmail().isBlank()) {
+            throw new IllegalArgumentException("Email is required.");
+        }
     }
 }
+

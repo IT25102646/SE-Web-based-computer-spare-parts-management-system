@@ -1,0 +1,48 @@
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
+<head><title>Delete spare part</title></head>
+<body>
+<section>
+
+    <h2 class="mb-3">Delete spare part</h2>
+
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+    <div class="alert alert-info">
+        Deleting <strong>discontinues</strong> the part: it is removed from the inventory list and from the order and
+        purchase-order dropdowns, but it is kept in the database so past orders, invoices, returns and the part history
+        stay correct. You can restore it later from <em>Show discontinued</em>.
+    </div>
+
+    <div class="card" style="max-width: 700px;">
+        <div class="card-body">
+            <p class="mb-1"><strong th:text="${part.name}"></strong>
+                <span class="text-muted" th:text="'(' + ${part.productCode} + ')'"></span></p>
+            <p class="text-muted" th:text="'Current stock: ' + ${part.stockQuantity}
+                + ' - value Rs. ' + ${#numbers.formatDecimal(part.stockQuantity * part.price,1,'COMMA',2,'POINT')}"></p>
+
+            <form th:action="@{/parts/delete/{id}(id=${part.id})}" method="post">
+                <div class="mb-3">
+                    <label class="form-label">Reason for deleting *</label>
+                    <textarea name="reason" class="form-control" rows="3" maxlength="300" required
+                              placeholder="e.g. Supplier discontinued the product / whole batch found faulty / recalled as unsafe"
+                              th:text="${reason}"></textarea>
+                </div>
+
+                <div class="form-check mb-3" th:if="${part.stockQuantity > 0}">
+                    <input class="form-check-input" type="checkbox" name="writeOff" value="true" id="writeOff">
+                    <label class="form-check-label" for="writeOff"
+                           th:text="'Write off the remaining ' + ${part.stockQuantity} + ' unit(s) as a loss (faulty / unsafe / unsellable). They will appear in the Damaged and Loss reports.'"></label>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-danger">Delete part</button>
+                    <a th:href="@{/parts}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</section>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
+<head><title>Roles</title></head>
+<body>
+<section>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">Role Management</h2>
+        <div>
+            <a th:href="@{/users}" class="btn btn-outline-secondary">Users</a>
+            <a th:href="@{/roles/new}" class="btn btn-accent"><i class="bi bi-plus-lg"></i> Add Role</a>
+        </div>
+    </div>
+
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+    <div class="card mb-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead><tr><th>ID</th><th>Role</th><th>Type</th><th>Users</th><th></th></tr></thead>
+                <tbody>
+                <tr th:each="role : ${roles}">
+                    <td th:text="${role.id}"></td>
+                    <td th:text="${role.roleName}"></td>
+                    <td>
+                        <span th:if="${builtIn.contains(role.roleName.toUpperCase())}" class="badge bg-secondary">Built-in</span>
+                        <span th:unless="${builtIn.contains(role.roleName.toUpperCase())}" class="badge bg-info text-dark">Custom</span>
+                    </td>
+                    <td th:text="${userCounts.get(role.id)}"></td>
+                    <td class="text-end text-nowrap">
+                        <th:block th:unless="${builtIn.contains(role.roleName.toUpperCase())}">
+                            <a th:href="@{/roles/edit/{id}(id=${role.id})}" class="btn btn-sm btn-outline-secondary btn-icon" title="Rename"><i class="bi bi-pencil"></i></a>
+                            <form th:action="@{/roles/delete/{id}(id=${role.id})}" method="post" class="d-inline"
+                                  onsubmit="return confirm('Delete this role?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger btn-icon" title="Delete"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </th:block>
+                        <span th:if="${builtIn.contains(role.roleName.toUpperCase())}" class="text-muted small">protected</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <h5 class="mb-2">Access matrix</h5>
+    <p class="text-muted small">Custom roles can sign in and use Home and My profile only, until pages are assigned to them in code.</p>
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table mb-0 text-center align-middle">
+                <thead>
+                <tr><th class="text-start">Module</th><th th:each="r : ${builtInList}" th:text="${r.replace('_',' ')}" class="small"></th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="m : ${access}">
+                    <td class="text-start" th:text="${m.key}"></td>
+                    <td th:each="r : ${builtInList}">
+                        <i th:if="${m.value.contains(r)}" class="bi bi-check-lg text-success"></i>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</section>
+</body>
+</html>

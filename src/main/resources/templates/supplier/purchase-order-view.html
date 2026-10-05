@@ -1,0 +1,47 @@
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
+<head><title>Purchase Order</title></head>
+<body>
+<section>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 th:text="'Purchase Order ' + ${purchaseOrder.orderNumber}">PO001</h2>
+        <a th:href="@{/purchase-orders}" class="btn btn-outline-secondary">Back to Purchase Orders</a>
+    </div>
+
+    <div class="card mb-4"><div class="card-body">
+        <table class="table table-sm mb-0">
+            <tr><th style="width:25%">Supplier</th><td th:text="${purchaseOrder.supplier.supplierName}"></td></tr>
+            <tr><th>Status</th><td><span th:text="${purchaseOrder.status}"
+                                         th:class="${purchaseOrder.status == 'RECEIVED'} ? 'badge badge-in-stock'
+                          : (${purchaseOrder.status == 'CANCELLED'} ? 'badge badge-out-stock' : 'badge badge-pending')"></span></td></tr>
+            <tr><th>Order Date</th><td th:text="${purchaseOrder.orderDate}"></td></tr>
+            <tr><th>Expected Delivery</th><td th:text="${purchaseOrder.expectedDeliveryDate}"></td></tr>
+            <tr><th>Delivered On</th><td th:text="${purchaseOrder.deliveryDate}"></td></tr>
+            <tr><th>Notes</th><td th:text="${purchaseOrder.notes}"></td></tr>
+        </table>
+    </div></div>
+
+    <div class="card">
+        <div class="card-header">Items</div>
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead><tr><th>Part</th><th>Ordered</th><th>Received</th><th>Unit Cost (Rs.)</th><th>Line Total (Rs.)</th></tr></thead>
+                <tbody>
+                <tr th:each="i : ${purchaseOrder.items}">
+                    <td th:text="${partNames[i.partId]}"></td>
+                    <td th:text="${i.orderedQuantity}"></td>
+                    <td th:text="${i.receivedQuantity}"></td>
+                    <td th:text="${#numbers.formatDecimal(i.unitCost == null ? 0 : i.unitCost,1,'COMMA',2,'POINT')}"></td>
+                    <td th:text="${#numbers.formatDecimal(i.orderedQuantity * (i.unitCost == null ? 0 : i.unitCost),1,'COMMA',2,'POINT')}"></td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(purchaseOrder.items)}"><td colspan="5" class="text-center text-muted py-3">No items.</td></tr>
+                </tbody>
+                <tfoot><tr><th colspan="4" class="text-end">Total</th><th th:text="${#numbers.formatDecimal(total,1,'COMMA',2,'POINT')}"></th></tr></tfoot>
+            </table>
+        </div>
+    </div>
+
+</section>
+</body>
+</html>

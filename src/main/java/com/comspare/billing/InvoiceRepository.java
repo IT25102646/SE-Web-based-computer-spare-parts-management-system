@@ -8,5 +8,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
 
     Optional<Invoice> findByOrderId(Long orderId);
 
+    boolean existsByInvoiceNumber(String invoiceNumber);
+
     List<Invoice> findAllByOrderByInvoiceDateDesc();
 }
