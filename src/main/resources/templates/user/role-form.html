@@ -1,0 +1,28 @@
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
+<head><title>Role form</title></head>
+<body>
+<section>
+
+    <h2 class="mb-3" th:text="${role.id == null ? 'Add Role' : 'Rename Role'}">Add Role</h2>
+
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+    <div class="card" style="max-width:600px;"><div class="card-body">
+        <form th:action="${role.id == null} ? @{/roles/save} : @{/roles/update/{id}(id=${role.id})}" method="post">
+            <div class="mb-3">
+                <label class="form-label">Role name</label>
+                <input type="text" name="roleName" class="form-control" th:value="${role.roleName}" maxlength="50" required
+                       placeholder="e.g. Warehouse Auditor">
+                <div class="form-text">Saved in capitals with underscores, e.g. WAREHOUSE_AUDITOR.</div>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-accent">Save</button>
+                <a th:href="@{/roles}" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div></div>
+
+</section>
+</body>
+</html>

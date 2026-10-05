@@ -1,160 +1,59 @@
 <html xmlns:th="http://www.thymeleaf.org"
       th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
-
-<head>
-    <title>Orders</title>
-</head>
-
+<head><title>Orders</title></head>
 <body>
 <section>
 
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2 class="mb-0">Orders</h2>
-
-        <a th:href="@{/orders/new}" class="btn btn-accent">
-            <i class="bi bi-plus-lg"></i> Create Order
-        </a>
+        <div>
+            <a th:href="@{/orders/history}" class="btn btn-outline-secondary">Customer History</a>
+            <a th:href="@{/orders/new}" class="btn btn-accent"><i class="bi bi-plus-lg"></i> Create Order</a>
+        </div>
     </div>
+
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
     <div class="card">
         <div class="table-responsive">
-
-            <table class="table table-hover mb-0">
-
+            <table class="table table-hover align-middle mb-0">
                 <thead>
-                <tr>
-                    <th>Order No.</th>
-                    <th>Customer</th>
-                    <th>Email</th>
-                    <th>Order Date</th>
-                    <th>Total Amount</th>
-                    <th>Status</th>
-                    <th>Update Status</th>
-                    <th>Actions</th>
-                </tr>
+                <tr><th>Order No.</th><th>Customer</th><th>Items</th><th>Order Date</th><th>Total</th><th>Status</th><th>Update Status</th><th></th></tr>
                 </thead>
-
                 <tbody>
-
                 <tr th:each="order : ${orders}">
-
                     <td th:text="${order.orderNumber}"></td>
-
-                    <td th:text="${order.customerName}"></td>
-
-                    <td th:text="${order.customerEmail}"></td>
-
-                    <td th:text="${order.orderDate}"></td>
-
-                    <td th:text="'Rs. ' + ${order.totalAmount}"></td>
-
-                    <!-- Current Status -->
+                    <td><div th:text="${order.customerName}"></div><small class="text-muted" th:text="${order.customerEmail}"></small></td>
+                    <td><div th:each="i : ${order.items}" class="small" th:text="${i.part.name + ' x ' + i.quantity}"></div></td>
+                    <td th:text="${#temporals.format(order.orderDate,'yyyy-MM-dd HH:mm')}"></td>
+                    <td th:text="'Rs. ' + ${#numbers.formatDecimal(order.totalAmount,1,'COMMA',2,'POINT')}"></td>
                     <td>
-
-                        <span th:if="${order.status == 'PENDING'}"
-                              class="badge bg-warning text-dark">
-                            Pending
-                        </span>
-
-                        <span th:if="${order.status == 'CONFIRMED'}"
-                              class="badge bg-primary">
-                            Confirmed
-                        </span>
-
-                        <span th:if="${order.status == 'SHIPPED'}"
-                              class="badge bg-info text-dark">
-                            Shipped
-                        </span>
-
-                        <span th:if="${order.status == 'DELIVERED'}"
-                              class="badge bg-success">
-                            Delivered
-                        </span>
-
-                        <span th:if="${order.status == 'CANCELLED'}"
-                              class="badge bg-danger">
-                            Cancelled
-                        </span>
-
+                        <span class="badge" th:classappend="${order.status == 'PENDING'} ? 'bg-warning text-dark'
+                              : (${order.status == 'CONFIRMED'} ? 'bg-primary'
+                              : (${order.status == 'SHIPPED'} ? 'bg-info text-dark'
+                              : (${order.status == 'DELIVERED'} ? 'bg-success' : 'bg-danger')))"
+                              th:text="${order.status}"></span>
                     </td>
-
-                    <!-- Update Status -->
                     <td>
-
-                        <form th:action="@{/orders/status/{id}(id=${order.id})}"
-                              method="post"
-                              class="d-flex gap-2">
-
-                            <select name="status"
-                                    class="form-select form-select-sm"
-                                    style="width: 130px;">
-
-                                <option value="PENDING"
-                                        th:selected="${order.status == 'PENDING'}">
-                                    Pending
-                                </option>
-
-                                <option value="CONFIRMED"
-                                        th:selected="${order.status == 'CONFIRMED'}">
-                                    Confirmed
-                                </option>
-
-                                <option value="SHIPPED"
-                                        th:selected="${order.status == 'SHIPPED'}">
-                                    Shipped
-                                </option>
-
-                                <option value="DELIVERED"
-                                        th:selected="${order.status == 'DELIVERED'}">
-                                    Delivered
-                                </option>
-
-                                <option value="CANCELLED"
-                                        th:selected="${order.status == 'CANCELLED'}">
-                                    Cancelled
-                                </option>
-
+                        <form th:action="@{/orders/status/{id}(id=${order.id})}" method="post" class="d-flex gap-2">
+                            <select name="status" class="form-select form-select-sm" style="width: 130px;">
+                                <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}" th:selected="${order.status == s}"></option>
                             </select>
-
-                            <button type="submit"
-                                    class="btn btn-sm btn-primary">
-                                Update
-                            </button>
-
+                            <button type="submit" class="btn btn-sm btn-primary">Update</button>
                         </form>
-
                     </td>
-
-                    <!-- Actions -->
-                    <td class="text-end">
-
-                        <a th:href="@{/orders/edit/{id}(id=${order.id})}"
-                           class="btn btn-sm btn-outline-secondary btn-icon"
-                           title="Edit">
-                            <i class="bi bi-pencil"></i>
-                        </a>
-
-                        <a th:href="@{/orders/delete/{id}(id=${order.id})}"
-                           class="btn btn-sm btn-outline-danger btn-icon"
-                           title="Delete"
-                           onclick="return confirm('Delete this order?');">
-                            <i class="bi bi-trash"></i>
-                        </a>
-
-                    </td>
-
-                </tr>
-
-                <tr th:if="${#lists.isEmpty(orders)}">
-                    <td colspan="8" class="text-center py-4">
-                        No orders found.
+                    <td class="text-end text-nowrap">
+                        <a th:href="@{/orders/edit/{id}(id=${order.id})}" class="btn btn-sm btn-outline-secondary btn-icon" title="Edit"><i class="bi bi-pencil"></i></a>
+                        <form th:action="@{/orders/delete/{id}(id=${order.id})}" method="post" class="d-inline"
+                              onsubmit="return confirm('Delete this order? Its stock will be returned to inventory.');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger btn-icon" title="Delete"><i class="bi bi-trash"></i></button>
+                        </form>
                     </td>
                 </tr>
-
+                <tr th:if="${#lists.isEmpty(orders)}"><td colspan="8" class="text-center py-4">No orders found.</td></tr>
                 </tbody>
-
             </table>
-
         </div>
     </div>
 

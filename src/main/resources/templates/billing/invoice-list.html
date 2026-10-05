@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
 <head><title>Invoices</title></head>
@@ -8,45 +7,42 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Invoices</h2>
         <div>
-            <a href="/invoices/payments" class="btn btn-outline-secondary">Payment History</a>
-            <a href="/invoices/new" class="btn btn-primary">New Invoice</a>
+            <a th:href="@{/invoices/payments}" class="btn btn-outline-secondary">Payment History</a>
+            <a th:href="@{/invoices/new}" class="btn btn-primary">New Invoice</a>
         </div>
     </div>
 
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
     <table class="table table-hover align-middle">
         <thead>
-        <tr>
-            <th>Invoice No</th>
-            <th>Order ID</th>
-            <th>Customer</th>
-            <th class="text-end">Total (Rs.)</th>
-            <th class="text-end">Paid (Rs.)</th>
-            <th>Status</th>
-            <th>Date</th>
-            <th></th>
-        </tr>
+        <tr><th>Invoice No</th><th>Order ID</th><th>Customer</th><th class="text-end">Total (Rs.)</th>
+            <th class="text-end">Paid (Rs.)</th><th>Status</th><th>Date</th><th></th></tr>
         </thead>
         <tbody>
         <tr th:each="inv : ${invoices}">
-            <td th:text="${inv.invoiceNumber}">INV-00001</td>
-            <td th:text="${inv.orderId}">1</td>
-            <td th:text="${inv.customerName}">Customer</td>
-            <td class="text-end" th:text="${#numbers.formatDecimal(inv.totalAmount,1,2)}">0.00</td>
-            <td class="text-end" th:text="${#numbers.formatDecimal(inv.amountPaid,1,2)}">0.00</td>
+            <td th:text="${inv.invoiceNumber}"></td>
+            <td th:text="${inv.orderId}"></td>
+            <td th:text="${inv.customerName}"></td>
+            <td class="text-end" th:text="${#numbers.formatDecimal(inv.totalAmount,1,'COMMA',2,'POINT')}"></td>
+            <td class="text-end" th:text="${#numbers.formatDecimal(inv.amountPaid,1,'COMMA',2,'POINT')}"></td>
             <td>
                 <span th:text="${inv.paymentStatus}"
                       th:class="${inv.paymentStatus.name() == 'PAID'} ? 'badge badge-approved'
-                              : (${inv.paymentStatus.name() == 'PARTIAL'} ? 'badge badge-pending'
-                              : 'badge badge-rejected')">PENDING</span>
+                              : (${inv.paymentStatus.name() == 'PARTIAL'} ? 'badge badge-pending' : 'badge badge-rejected')"></span>
             </td>
-            <td th:text="${#temporals.format(inv.invoiceDate,'yyyy-MM-dd HH:mm')}">2026-01-01</td>
-            <td class="text-end">
+            <td th:text="${#temporals.format(inv.invoiceDate,'yyyy-MM-dd HH:mm')}"></td>
+            <td class="text-end text-nowrap">
                 <a th:href="@{/invoices/{id}(id=${inv.id})}" class="btn btn-sm btn-outline-primary">View</a>
+                <a th:href="@{/invoices/{id}/edit(id=${inv.id})}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                <form th:action="@{/invoices/{id}/delete(id=${inv.id})}" method="post" class="d-inline"
+                      onsubmit="return confirm('Delete this invoice and all its payments?');">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                </form>
             </td>
         </tr>
-        <tr th:if="${#lists.isEmpty(invoices)}">
-            <td colspan="8" class="text-center text-muted py-4">No invoices yet.</td>
-        </tr>
+        <tr th:if="${#lists.isEmpty(invoices)}"><td colspan="8" class="text-center text-muted py-4">No invoices yet.</td></tr>
         </tbody>
     </table>
 

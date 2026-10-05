@@ -12,208 +12,67 @@ import com.itextpdf.text.pdf.PdfWriter;
 import org.springframework.stereotype.Service;
 
 import java.io.OutputStream;
-import java.text.DecimalFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/** Builds the PDF in memory with iText from the same rows the web page shows. */
 @Service
 public class PdfExportService {
 
-    private final DecimalFormat decimalFormat =
-            new DecimalFormat("#,##0.00");
+    public void export(String title, List<Map<String, Object>> rows, OutputStream out) throws Exception {
 
-    public void export(
-            String title,
-            List<Map<String, Object>> rows,
-            OutputStream outputStream)
-            throws Exception {
-
-        Document document = new Document(
-                PageSize.A4.rotate(),
-                25,
-                25,
-                30,
-                30
-        );
-
-        PdfWriter.getInstance(document, outputStream);
-
+        Document document = new Document(PageSize.A4.rotate(), 25, 25, 30, 30);
+        PdfWriter.getInstance(document, out);
         document.open();
 
-        // =====================================================
-        // TITLE
-        // =====================================================
+        Paragraph heading = new Paragraph(title, new Font(Font.FontFamily.HELVETICA, 18, Font.BOLD));
+        heading.setAlignment(Element.ALIGN_CENTER);
+        document.add(heading);
 
-        Font titleFont = new Font(
-                Font.FontFamily.HELVETICA,
-                18,
-                Font.BOLD
-        );
-
-        Paragraph titleParagraph =
-                new Paragraph(title, titleFont);
-
-        titleParagraph.setAlignment(Element.ALIGN_CENTER);
-
-        document.add(titleParagraph);
-
+        Paragraph generated = new Paragraph(
+                "LankaTech Computer Supplies (Pvt) Ltd - generated "
+                        + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")),
+                new Font(Font.FontFamily.HELVETICA, 9));
+        generated.setAlignment(Element.ALIGN_CENTER);
+        document.add(generated);
         document.add(new Paragraph(" "));
 
-        // =====================================================
-        // EMPTY REPORT
-        // =====================================================
-
         if (rows == null || rows.isEmpty()) {
-
-            Font normalFont = new Font(
-                    Font.FontFamily.HELVETICA,
-                    11
-            );
-
-            Paragraph empty =
-                    new Paragraph(
-                            "No records were found for this report.",
-                            normalFont
-                    );
-
+            Paragraph empty = new Paragraph("No records were found for this report.",
+                    new Font(Font.FontFamily.HELVETICA, 11));
             empty.setAlignment(Element.ALIGN_CENTER);
-
             document.add(empty);
-
             document.close();
-
             return;
         }
 
-        // =====================================================
-        // GET COLUMNS FROM FIRST ROW
-        // =====================================================
-
-        List<String> columns =
-                new ArrayList<>(rows.get(0).keySet());
-
-        PdfPTable table =
-                new PdfPTable(columns.size());
-
+        List<String> columns = new ArrayList<>(rows.get(0).keySet());
+        PdfPTable table = new PdfPTable(columns.size());
         table.setWidthPercentage(100);
+        table.setHeaderRows(1);
 
-        // =====================================================
-        // HEADER
-        // =====================================================
-
-        Font headerFont = new Font(
-                Font.FontFamily.HELVETICA,
-                9,
-                Font.BOLD
-        );
-
+        Font headerFont = new Font(Font.FontFamily.HELVETICA, 9, Font.BOLD);
         for (String column : columns) {
-
-            PdfPCell cell =
-                    new PdfPCell(
-                            new Phrase(
-                                    formatColumnName(column),
-                                    headerFont
-                            )
-                    );
-
-            cell.setHorizontalAlignment(
-                    Element.ALIGN_CENTER
-            );
-
+            PdfPCell cell = new PdfPCell(new Phrase(column, headerFont));
+            cell.setHorizontalAlignment(Element.ALIGN_CENTER);
             cell.setPadding(5);
-
             table.addCell(cell);
         }
 
-        // =====================================================
-        // DATA
-        // =====================================================
-
-        Font dataFont = new Font(
-                Font.FontFamily.HELVETICA,
-                8
-        );
-
+        Font dataFont = new Font(Font.FontFamily.HELVETICA, 8);
         for (Map<String, Object> row : rows) {
-
             for (String column : columns) {
-
-                Object value = row.get(column);
-
-                String text = formatValue(value);
-
-                PdfPCell cell =
-                        new PdfPCell(
-                                new Phrase(
-                                        text,
-                                        dataFont
-                                )
-                        );
-
+                Object v = row.get(column);
+                PdfPCell cell = new PdfPCell(new Phrase(v == null ? "" : v.toString(), dataFont));
                 cell.setPadding(4);
-
                 table.addCell(cell);
             }
         }
 
         document.add(table);
-
         document.close();
-    }
-
-    // =========================================================
-    // FORMAT COLUMN NAME
-    // =========================================================
-
-    private String formatColumnName(String column) {
-
-        if (column == null || column.isBlank()) {
-            return "";
-        }
-
-        StringBuilder result =
-                new StringBuilder();
-
-        for (int i = 0; i < column.length(); i++) {
-
-            char c = column.charAt(i);
-
-            if (i > 0 && Character.isUpperCase(c)) {
-                result.append(' ');
-            }
-
-            result.append(c);
-        }
-
-        return result.toString();
-    }
-
-    // =========================================================
-    // FORMAT DATABASE VALUE
-    // =========================================================
-
-    private String formatValue(Object value) {
-
-        if (value == null) {
-            return "";
-        }
-
-        if (value instanceof Number) {
-
-            return decimalFormat.format(
-                    ((Number) value).doubleValue()
-            );
-        }
-
-        if (value instanceof Boolean) {
-
-            return ((Boolean) value)
-                    ? "Yes"
-                    : "No";
-        }
-
-        return value.toString();
     }
 }

@@ -1,0 +1,74 @@
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
+<head><title>Reorder Prediction</title></head>
+<body>
+<section>
+
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <h2 class="mb-0" th:text="${reportTitle}">Reorder Prediction Report</h2>
+        <div class="d-flex gap-2 flex-wrap">
+            <a th:href="@{/reports}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Reports Dashboard</a>
+            <a th:href="@{/reports/reorder-prediction/pdf(category=${category})}" class="btn btn-danger"><i class="bi bi-file-earmark-pdf"></i> Export PDF</a>
+        </div>
+    </div>
+
+    <div class="card mb-3"><div class="card-body text-muted" th:text="${reportDescription}"></div></div>
+
+    <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
+    <div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+    <div class="card mb-3"><div class="card-body">
+        <form method="get" th:action="@{/reports/reorder-prediction}" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label" for="category">Category</label>
+                <input type="text" id="category" name="category" class="form-control" placeholder="All categories" th:value="${category}">
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Apply</button>
+                <a th:href="@{/reports/reorder-prediction}" class="btn btn-outline-secondary">Clear</a>
+            </div>
+        </form>
+    </div></div>
+
+    <p class="text-muted">Records: <strong th:text="${#lists.size(rows)}">0</strong></p>
+
+    <div class="card" th:if="${!#lists.isEmpty(rows)}">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                <tr><th>Product Code</th><th>Part Name</th><th>Category</th><th>Current Stock</th><th>Reorder Level</th>
+                    <th>Suggested Reorder Qty</th><th>Est. Reorder Cost</th><th>Status</th><th>Update Reorder Level</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="row : ${rows}">
+                    <td th:text="${row.ProductCode}"></td>
+                    <td th:text="${row.PartName}"></td>
+                    <td th:text="${row.Category}"></td>
+                    <td th:text="${row.CurrentStock}"></td>
+                    <td th:text="${row.ReorderLevel}"></td>
+                    <td th:text="${row.SuggestedReorderQty}"></td>
+                    <td th:text="${row.EstimatedReorderCost}"></td>
+                    <td><span class="badge" th:classappend="${row.Status == 'OUT_OF_STOCK'} ? 'badge-out-stock' : 'badge-low-stock'" th:text="${row.Status}"></span></td>
+                    <td>
+                        <form th:action="@{/reports/reorder-prediction/update}" method="post" class="d-flex gap-2 align-items-center">
+                            <input type="hidden" name="productCode" th:value="${row.ProductCode}">
+                            <input type="number" name="newReorderLevel" min="0" class="form-control form-control-sm" style="width: 90px;" th:value="${row.ReorderLevel}" required>
+                            <button type="submit" class="btn btn-sm btn-primary">Update</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card" th:if="${#lists.isEmpty(rows)}">
+        <div class="card-body text-center text-muted py-5">
+            <h5>No parts need reordering right now</h5>
+            <p class="mb-0">Every part is above its reorder level.</p>
+        </div>
+    </div>
+
+</section>
+</body>
+</html>

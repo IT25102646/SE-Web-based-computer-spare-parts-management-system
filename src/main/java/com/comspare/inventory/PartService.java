@@ -14,73 +14,36 @@ public class PartService {
     private final PartHistoryRepository partHistoryRepository;
 
     public PartService(PartRepository partRepository,
-                        StockAdjustmentRepository stockAdjustmentRepository,
-                        PartHistoryRepository partHistoryRepository) {
+                       StockAdjustmentRepository stockAdjustmentRepository,
+                       PartHistoryRepository partHistoryRepository) {
         this.partRepository = partRepository;
         this.stockAdjustmentRepository = stockAdjustmentRepository;
         this.partHistoryRepository = partHistoryRepository;
     }
 
-    // ===================== UC-I04: View Stock =====================
+    // ===================== READ =====================
 
+    /** Every part, including discontinued ones (for name look-ups on old records). */
     public List<Part> getAllParts() {
         return partRepository.findAll();
+    }
+
+    /** Only parts that are still sold / orderable. */
+    public List<Part> getActiveParts() {
+        return partRepository.findByActiveTrueOrderByNameAsc();
     }
 
     public Optional<Part> getPartById(Long id) {
         return partRepository.findById(id);
     }
 
-    public List<Part> searchParts(String term) {
+    public List<Part> searchParts(String term, boolean discontinued) {
+        Boolean active = !discontinued;
         if (term == null || term.isBlank()) {
-            return getAllParts();
+            return partRepository.findByActiveOrderByNameAsc(active);
         }
-        return partRepository.search(term);
+        return partRepository.search(term.trim(), active);
     }
-
-    // ===================== UC-I01: Add Spare Part =====================
-
-    @Transactional
-    public Part addPart(Part part) {
-        if (partRepository.existsByProductCode(part.getProductCode())) {
-            throw new IllegalArgumentException(
-                "A part with product code '" + part.getProductCode() + "' already exists.");
-        }
-        Part saved = partRepository.save(part);
-        logHistoryEvent(saved.getId(), "RECEIVED", saved.getStockQuantity(), "Initial stock on creation");
-        return saved;
-    }
-
-    // ===================== UC-I02: Update Spare Part =====================
-
-    @Transactional
-    public Part updatePart(Long id, Part updatedPart) {
-        Part existing = partRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Part not found with id: " + id));
-
-        existing.setName(updatedPart.getName());
-        existing.setCategory(updatedPart.getCategory());
-        existing.setBrand(updatedPart.getBrand());
-        existing.setModel(updatedPart.getModel());
-        existing.setPrice(updatedPart.getPrice());
-        existing.setStockQuantity(updatedPart.getStockQuantity());
-        existing.setReorderLevel(updatedPart.getReorderLevel());
-        existing.setLocation(updatedPart.getLocation());
-        existing.setSpecifications(updatedPart.getSpecifications());
-        existing.setCompatibleWith(updatedPart.getCompatibleWith());
-        // Product code intentionally not editable after creation
-
-        return partRepository.save(existing);
-    }
-
-    // ===================== UC-I03: Delete Spare Part =====================
-
-    @Transactional
-    public void deletePart(Long id) {
-        partRepository.deleteById(id);
-    }
-
-    // ===================== UC-I07: Receive Low-Stock Alert =====================
 
     public List<Part> getLowStockParts() {
         return partRepository.findLowStockParts();
@@ -90,106 +53,233 @@ public class PartService {
         return getLowStockParts().size();
     }
 
-    // ===================== UC-I05: Adjust Stock (manual, staff-driven) =====================
+    public List<PartHistory> getPartHistory(Long partId) {
+        return partHistoryRepository.findByPartIdOrderByEventDateDesc(partId);
+    }
+
+    // ===================== CREATE =====================
+
+    @Transactional
+    public Part addPart(Part part, String reason) {
+        requireReason(reason);
+        part.setProductCode(part.getProductCode().trim());
+        if (partRepository.existsByProductCode(part.getProductCode())) {
+            throw new IllegalArgumentException(
+                    "A part with product code '" + part.getProductCode() + "' already exists (it may be discontinued).");
+        }
+        part.setActive(true);
+        Part saved = partRepository.save(part);
+        log(saved, "CREATED", saved.getStockQuantity(),
+                "Part added (initial stock " + saved.getStockQuantity() + "). Reason: " + reason.trim());
+        return saved;
+    }
+
+    // ===================== UPDATE =====================
+
+    /** Product code and stock quantity are NOT changed here (stock only changes via adjustStock). */
+    @Transactional
+    public Part updatePart(Long id, Part updated, String reason) {
+        requireReason(reason);
+        Part existing = requirePart(id);
+
+        StringBuilder changes = new StringBuilder();
+        diff(changes, "name", existing.getName(), updated.getName());
+        diff(changes, "category", existing.getCategory(), updated.getCategory());
+        diff(changes, "brand", existing.getBrand(), updated.getBrand());
+        diff(changes, "model", existing.getModel(), updated.getModel());
+        diff(changes, "price", existing.getPrice(), updated.getPrice());
+        diff(changes, "reorder level", existing.getReorderLevel(), updated.getReorderLevel());
+        diff(changes, "location", existing.getLocation(), updated.getLocation());
+        diff(changes, "specifications", existing.getSpecifications(), updated.getSpecifications());
+        diff(changes, "compatible with", existing.getCompatibleWith(), updated.getCompatibleWith());
+
+        existing.setName(updated.getName());
+        existing.setCategory(updated.getCategory());
+        existing.setBrand(updated.getBrand());
+        existing.setModel(updated.getModel());
+        existing.setPrice(updated.getPrice());
+        existing.setReorderLevel(updated.getReorderLevel());
+        existing.setLocation(updated.getLocation());
+        existing.setSpecifications(updated.getSpecifications());
+        existing.setCompatibleWith(updated.getCompatibleWith());
+        Part saved = partRepository.save(existing);
+
+        log(saved, "UPDATED", null, "Reason: " + reason.trim()
+                + (changes.length() == 0 ? " | no field values changed" : " | " + changes));
+        return saved;
+    }
+
+    // ===================== DELETE (= DISCONTINUE) =====================
+
+    /**
+     * "Deleting" a part discontinues it: it disappears from the inventory list and from order /
+     * purchase-order dropdowns, but the row stays so past orders, invoices, returns and the part
+     * history remain valid. Remaining stock must be written off as a loss (damaged) first.
+     */
+    @Transactional
+    public void discontinuePart(Long id, String reason, boolean writeOff, String by) {
+        requireReason(reason);
+        Part part = requirePart(id);
+        if (!Boolean.TRUE.equals(part.getActive())) {
+            throw new IllegalStateException("This part is already discontinued.");
+        }
+
+        int stock = part.getStockQuantity();
+        if (stock > 0) {
+            if (!writeOff) {
+                throw new IllegalArgumentException("This part still has " + stock
+                        + " in stock. Tick \"write off as a loss\", or adjust the stock to 0 first.");
+            }
+            StockAdjustment adjustment = new StockAdjustment();
+            adjustment.setPart(part);
+            adjustment.setChangeAmount(-stock);
+            adjustment.setReason("Discontinued - written off");
+            adjustment.setAdjustedBy(cut(by, 100));
+            stockAdjustmentRepository.save(adjustment);
+
+            log(part, "DAMAGED", stock, "Written off on discontinuation. Reason: " + reason.trim());
+            part.setStockQuantity(0);
+        }
+
+        part.setActive(false);
+        partRepository.save(part);
+        log(part, "DISCONTINUED", stock, "Part discontinued. Reason: " + reason.trim());
+    }
+
+    @Transactional
+    public void restorePart(Long id) {
+        Part part = requirePart(id);
+        if (Boolean.TRUE.equals(part.getActive())) {
+            throw new IllegalStateException("This part is already active.");
+        }
+        part.setActive(true);
+        partRepository.save(part);
+        log(part, "RESTORED", null, "Part restored to the active inventory");
+    }
+
+    // ===================== MANUAL STOCK ADJUSTMENT =====================
 
     @Transactional
     public Part adjustStock(Long partId, int changeAmount, String reason, String adjustedBy) {
-        Part part = partRepository.findById(partId)
-            .orElseThrow(() -> new IllegalArgumentException("Part not found with id: " + partId));
+        if (changeAmount == 0) {
+            throw new IllegalArgumentException("Change amount cannot be zero.");
+        }
+        Part part = requirePart(partId);
 
         int newQuantity = part.getStockQuantity() + changeAmount;
         if (newQuantity < 0) {
             throw new IllegalArgumentException(
-                "This adjustment would result in negative stock (" + newQuantity + ").");
+                    "This adjustment would result in negative stock (" + newQuantity + ").");
         }
-
         part.setStockQuantity(newQuantity);
         partRepository.save(part);
 
         StockAdjustment adjustment = new StockAdjustment();
         adjustment.setPart(part);
         adjustment.setChangeAmount(changeAmount);
-        adjustment.setReason(reason);
-        adjustment.setAdjustedBy(adjustedBy);
+        adjustment.setReason(cut(reason, 50));
+        adjustment.setAdjustedBy(cut(adjustedBy, 100));
         stockAdjustmentRepository.save(adjustment);
 
-        logHistoryEvent(partId, "ADJUSTED", changeAmount, reason);
-
+        // "Damaged" removals feed the Damaged / Loss reports
+        String type = (changeAmount < 0 && "Damaged".equalsIgnoreCase(reason)) ? "DAMAGED" : "ADJUSTED";
+        log(part, type, Math.abs(changeAmount), reason + " (" + (changeAmount > 0 ? "+" : "") + changeAmount + ")");
         return part;
     }
 
-    // ===================== UC-I06: View Part History =====================
+    // =========================================================================
+    // CROSS-MODULE METHODS - used by the Orders, Supplier and Returns modules
+    // =========================================================================
 
-    public List<PartHistory> getPartHistory(Long partId) {
-        return partHistoryRepository.findByPartIdOrderByEventDateDesc(partId);
+    /** Orders: stock leaves when an order is placed. */
+    @Transactional
+    public void reduceStockForSale(Long partId, int quantity, String note) {
+        Part part = requirePart(partId);
+        if (part.getStockQuantity() < quantity) {
+            throw new IllegalArgumentException("Not enough stock for " + part.getName()
+                    + ". Available stock: " + part.getStockQuantity());
+        }
+        part.setStockQuantity(part.getStockQuantity() - quantity);
+        partRepository.save(part);
+        log(part, "SOLD", quantity, note);
     }
 
-    // Internal helper — writes one row to the part_history timeline.
-    // Public so cross-module calls below can reuse it directly if needed.
+    /** Orders: cancelled / edited / deleted order puts stock back. */
+    @Transactional
+    public void restoreStockFromOrder(Long partId, int quantity, String note) {
+        Part part = requirePart(partId);
+        part.setStockQuantity(part.getStockQuantity() + quantity);
+        partRepository.save(part);
+        log(part, "RETURNED", quantity, note);
+    }
+
+    /** Purchase orders: a delivery was received from the supplier. */
+    @Transactional
+    public void increaseStockFromDelivery(Long partId, int quantity, String note) {
+        Part part = requirePart(partId);
+        part.setStockQuantity(part.getStockQuantity() + quantity);
+        partRepository.save(part);
+        log(part, "RECEIVED", quantity, note);
+    }
+
+    /** Returns: a good item came back and can be sold again. */
+    @Transactional
+    public void restockFromReturn(Long partId, int quantity, String note) {
+        Part part = requirePart(partId);
+        part.setStockQuantity(part.getStockQuantity() + quantity);
+        partRepository.save(part);
+        log(part, "RETURNED", quantity, note);
+    }
+
+    /**
+     * Returns: a defective item came back. It was already taken off the shelf when it was
+     * sold, so stock does not change - the unit is only recorded as DAMAGED (loss report).
+     */
+    @Transactional
+    public void markAsDamagedFromReturn(Long partId, int quantity, String reason) {
+        Part part = requirePart(partId);
+        log(part, "DAMAGED", quantity, "Returned defective: " + reason);
+    }
+
+    /** Kept for compatibility with older callers. */
+    @Transactional
     public void logHistoryEvent(Long partId, String eventType, Integer quantity, String notes) {
-        Part part = partRepository.findById(partId)
-            .orElseThrow(() -> new IllegalArgumentException("Part not found with id: " + partId));
+        log(requirePart(partId), eventType, quantity, notes);
+    }
+
+    // ===================== helpers =====================
+
+    private Part requirePart(Long id) {
+        return partRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Part not found with id: " + id));
+    }
+
+    private void log(Part part, String eventType, Integer quantity, String notes) {
         PartHistory entry = new PartHistory();
         entry.setPart(part);
         entry.setEventType(eventType);
         entry.setQuantity(quantity);
-        entry.setNotes(notes);
+        entry.setNotes(cut(notes, 500));
         partHistoryRepository.save(entry);
     }
 
-    // =========================================================================
-    // CROSS-MODULE METHODS — called by OTHER teammates' services, not by
-    // PartController. See the integration instructions below for who calls
-    // what, and why these exist instead of using adjustStock() directly.
-    // =========================================================================
-
-    // Called by Wickramasinghe K.N's OrderService when an order is confirmed.
-    @Transactional
-    public void reduceStockForSale(Long partId, int quantity) {
-        Part part = partRepository.findById(partId)
-            .orElseThrow(() -> new IllegalArgumentException("Part not found with id: " + partId));
-
-        if (part.getStockQuantity() < quantity) {
-            throw new IllegalStateException(
-                "Insufficient stock for part '" + part.getName() + "'. Available: "
-                + part.getStockQuantity() + ", requested: " + quantity);
+    private static void requireReason(String reason) {
+        if (reason == null || reason.isBlank()) {
+            throw new IllegalArgumentException("A reason is required.");
         }
-
-        part.setStockQuantity(part.getStockQuantity() - quantity);
-        partRepository.save(part);
-        logHistoryEvent(partId, "SOLD", quantity, "Sold via customer order");
     }
 
-    // Called by Jayawardana H.M.S.V's PurchaseOrderService when a delivery
-    // is marked "Received".
-    @Transactional
-    public void increaseStockFromDelivery(Long partId, int quantity) {
-        Part part = partRepository.findById(partId)
-            .orElseThrow(() -> new IllegalArgumentException("Part not found with id: " + partId));
-
-        part.setStockQuantity(part.getStockQuantity() + quantity);
-        partRepository.save(part);
-        logHistoryEvent(partId, "RECEIVED", quantity, "Received from supplier delivery");
+    private static void diff(StringBuilder sb, String label, Object oldV, Object newV) {
+        String o = oldV == null ? "" : oldV.toString().trim();
+        String n = newV == null ? "" : newV.toString().trim();
+        if (!o.equals(n)) {
+            if (sb.length() > 0) sb.append("; ");
+            sb.append(label).append(": ").append(o.isEmpty() ? "-" : o).append(" -> ").append(n.isEmpty() ? "-" : n);
+        }
     }
 
-    // Called by Manaweera H.T's ReturnRequestService when a return is approved
-    // and the item is confirmed defective.
-    @Transactional
-    public void markAsDamagedFromReturn(Long partId, int quantity, String reason) {
-        Part part = partRepository.findById(partId)
-            .orElseThrow(() -> new IllegalArgumentException("Part not found with id: " + partId));
-
-        int newQuantity = Math.max(0, part.getStockQuantity() - quantity);
-        part.setStockQuantity(newQuantity);
-        partRepository.save(part);
-
-        StockAdjustment adjustment = new StockAdjustment();
-        adjustment.setPart(part);
-        adjustment.setChangeAmount(-quantity);
-        adjustment.setReason("Damaged (return approved): " + reason);
-        adjustment.setAdjustedBy("System — Returns module");
-        stockAdjustmentRepository.save(adjustment);
-
-        logHistoryEvent(partId, "DAMAGED", quantity, reason);
+    private static String cut(String text, int max) {
+        if (text == null) return null;
+        return text.length() <= max ? text : text.substring(0, max);
     }
 }

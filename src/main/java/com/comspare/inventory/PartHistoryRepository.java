@@ -7,4 +7,6 @@ import java.util.List;
 public interface PartHistoryRepository extends JpaRepository<PartHistory, Long> {
 
     List<PartHistory> findByPartIdOrderByEventDateDesc(Long partId);
+
+    void deleteByPartId(Long partId);
 }

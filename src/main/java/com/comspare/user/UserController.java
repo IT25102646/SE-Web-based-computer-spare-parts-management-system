@@ -1,14 +1,14 @@
 package com.comspare.user;
 
-import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+/** ADMIN only (enforced in SecurityConfig). */
 @Controller
+@RequestMapping("/users")
 public class UserController {
 
     private final UserService userService;
@@ -19,142 +19,92 @@ public class UserController {
         this.auditLogService = auditLogService;
     }
 
-    // ================= READ (list) =================
-    @GetMapping("/users")
-    public String list(Model model) {
-        model.addAttribute("users", userService.findAll());
-        model.addAttribute("activePage", "users");
+    @GetMapping
+    public String listUsers(Model model) {
+        model.addAttribute("users", userService.getAllUsers());
         return "user/user-list";
     }
 
-    // ================= CREATE =================
-    @GetMapping("/users/new")
-    public String newForm(Model model) {
-        model.addAttribute("userForm", new UserForm());
-        return formView(model, false);
+    @GetMapping("/new")
+    public String showCreateForm(Model model) {
+        model.addAttribute("user", new User());
+        model.addAttribute("roles", userService.getAllRoles());
+        return "user/user-form";
     }
 
-    @PostMapping("/users")
-    public String create(@Valid @ModelAttribute("userForm") UserForm form,
-                         BindingResult result, Model model, RedirectAttributes flash) {
-        if (form.getPassword() == null || form.getPassword().isBlank()) {
-            result.rejectValue("password", "required", "Password is required for a new user");
-        } else if (!UserService.isStrongPassword(form.getPassword())) {
-            result.rejectValue("password", "weak", "Use at least 8 characters with a letter and a number");
-        }
-        if (result.hasErrors()) {
-            return formView(model, false);
-        }
+    @PostMapping("/save")
+    public String saveUser(@ModelAttribute User user, @RequestParam Long roleId,
+                           Model model, RedirectAttributes ra) {
         try {
-            User created = userService.create(form);
-            flash.addFlashAttribute("success", "Created account for " + created.getName());
+            User saved = userService.createUser(user, roleId);
+            auditLogService.log("CREATE", "users #" + saved.getId(), null, "Created: " + describe(saved));
+            ra.addFlashAttribute("successMessage", "User created.");
             return "redirect:/users";
-        } catch (IllegalArgumentException e) {
-            result.rejectValue("email", "duplicate", e.getMessage());
-            return formView(model, false);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            model.addAttribute("errorMessage", e.getMessage());
+            model.addAttribute("roles", userService.getAllRoles());
+            return "user/user-form";
         }
     }
 
-    // ================= UPDATE =================
-    @GetMapping("/users/{id}/edit")
-    public String editForm(@PathVariable Long id, Model model) {
-        User user = userService.get(id);
-        UserForm form = new UserForm();
-        form.setId(user.getId());
-        form.setName(user.getName());
-        form.setEmail(user.getEmail());
-        form.setRoleId(user.getRole().getId());
-        model.addAttribute("userForm", form);
-        return formView(model, true);
+    @GetMapping("/edit/{id}")
+    public String showEditForm(@PathVariable Long id, Model model) {
+        model.addAttribute("user", userService.getUserById(id));
+        model.addAttribute("roles", userService.getAllRoles());
+        return "user/user-form";
     }
 
-    @PostMapping("/users/{id}")
-    public String update(@PathVariable Long id,
-                         @Valid @ModelAttribute("userForm") UserForm form,
-                         BindingResult result, Model model,
-                         Authentication auth, RedirectAttributes flash) {
-        form.setId(id);
-        if (form.getPassword() != null && !form.getPassword().isBlank()
-                && !UserService.isStrongPassword(form.getPassword())) {
-            result.rejectValue("password", "weak", "Use at least 8 characters with a letter and a number");
-        }
-        if (result.hasErrors()) {
-            return formView(model, true);
-        }
+    @PostMapping("/update/{id}")
+    public String updateUser(@PathVariable Long id, @ModelAttribute User user,
+                             @RequestParam Long roleId, Model model, RedirectAttributes ra) {
+        String oldValue = describe(userService.getUserById(id));
         try {
-            userService.update(id, form, auth.getName());
-            flash.addFlashAttribute("success", "Saved changes for " + form.getName());
+            User updated = userService.updateUser(id, user, roleId);
+            auditLogService.log("UPDATE", "users #" + id, oldValue, describe(updated));
+            ra.addFlashAttribute("successMessage", "User updated.");
             return "redirect:/users";
-        } catch (IllegalArgumentException e) {
-            result.rejectValue("email", "duplicate", e.getMessage());
-            return formView(model, true);
-        } catch (IllegalStateException e) {
-            result.rejectValue("roleId", "rule", e.getMessage());
-            return formView(model, true);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            user.setId(id);
+            model.addAttribute("user", user);
+            model.addAttribute("errorMessage", e.getMessage());
+            model.addAttribute("roles", userService.getAllRoles());
+            return "user/user-form";
         }
     }
 
-    // ================= DELETE (soft) / RESTORE =================
-    @PostMapping("/users/{id}/deactivate")
-    public String deactivate(@PathVariable Long id, Authentication auth, RedirectAttributes flash) {
+    // "Delete" = deactivate: the account can no longer log in, but the record stays
+    @PostMapping("/deactivate/{id}")
+    public String deactivate(@PathVariable Long id, Authentication auth, RedirectAttributes ra) {
         try {
-            userService.deactivate(id, auth.getName());
-            flash.addFlashAttribute("success", "Account deactivated. Their history is kept.");
-        } catch (IllegalStateException e) {
-            flash.addFlashAttribute("error", e.getMessage());
+            User user = userService.deactivateUser(id, auth.getName());
+            auditLogService.log("DEACTIVATE", "users #" + id, "active", "deactivated: " + user.getEmail());
+            ra.addFlashAttribute("successMessage", "User deactivated. They can no longer log in.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            ra.addFlashAttribute("errorMessage", e.getMessage());
         }
         return "redirect:/users";
     }
 
-    @PostMapping("/users/{id}/activate")
-    public String activate(@PathVariable Long id, RedirectAttributes flash) {
-        userService.activate(id);
-        flash.addFlashAttribute("success", "Account reactivated.");
+    @PostMapping("/reactivate/{id}")
+    public String reactivate(@PathVariable Long id, RedirectAttributes ra) {
+        try {
+            User user = userService.reactivateUser(id);
+            auditLogService.log("REACTIVATE", "users #" + id, "deactivated", "active: " + user.getEmail());
+            ra.addFlashAttribute("successMessage", "User reactivated.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            ra.addFlashAttribute("errorMessage", e.getMessage());
+        }
         return "redirect:/users";
     }
 
-    // ================= AUDIT TRAIL (read-only) =================
     @GetMapping("/audit")
-    public String audit(@RequestParam(required = false) String q, Model model) {
+    public String auditLogs(@RequestParam(required = false) String q, Model model) {
         model.addAttribute("logs", auditLogService.findAll(q));
-        model.addAttribute("q", q == null ? "" : q);
-        model.addAttribute("activePage", "audit");
+        model.addAttribute("q", q);
         return "user/audit-list";
     }
 
-    // ================= MY PROFILE (any logged-in user) =================
-    @GetMapping("/profile")
-    public String profile(Authentication auth, Model model) {
-        model.addAttribute("me", userService.getByEmail(auth.getName()));
-        model.addAttribute("activePage", "profile");
-        return "user/profile";
-    }
-
-    @PostMapping("/profile/password")
-    public String changePassword(@RequestParam String currentPassword,
-                                 @RequestParam String newPassword,
-                                 @RequestParam String confirmPassword,
-                                 Authentication auth, RedirectAttributes flash) {
-        if (!newPassword.equals(confirmPassword)) {
-            flash.addFlashAttribute("error", "The new passwords do not match");
-        } else if (!UserService.isStrongPassword(newPassword)) {
-            flash.addFlashAttribute("error", "Use at least 8 characters with a letter and a number");
-        } else {
-            try {
-                userService.changeOwnPassword(auth.getName(), currentPassword, newPassword);
-                flash.addFlashAttribute("success", "Password updated");
-            } catch (IllegalArgumentException e) {
-                flash.addFlashAttribute("error", e.getMessage());
-            }
-        }
-        return "redirect:/profile";
-    }
-
-    // ---------- helper ----------
-    private String formView(Model model, boolean editing) {
-        model.addAttribute("roles", userService.findRoles());
-        model.addAttribute("editing", editing);
-        model.addAttribute("activePage", "users");
-        return "user/user-form";
+    private String describe(User u) {
+        return "Name: " + u.getName() + ", Email: " + u.getEmail() + ", Role: " + u.getRole().getRoleName();
     }
 }

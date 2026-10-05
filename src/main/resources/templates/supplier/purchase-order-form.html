@@ -4,53 +4,150 @@
 <body>
 <section>
 
-    <h2>Create Purchase Order</h2>
+    <h2 class="mb-3" th:text="${purchaseOrder.id == null ? 'Create Purchase Order' : 'Edit Purchase Order'}">Create Purchase Order</h2>
 
-    <div class="card" style="max-width:800px;">
-        <div class="card-body">
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
-            <form th:action="@{/purchase-orders/save}" th:object="${purchaseOrder}" method="post">
+    <form th:action="@{/purchase-orders/save}" th:object="${purchaseOrder}" method="post" onsubmit="return prepareSubmit();">
+        <input type="hidden" th:field="*{id}">
 
-                <input type="hidden" th:field="*{id}">
+        <div class="card mb-4"><div class="card-body"><div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Order Number</label>
+                <input type="text" th:field="*{orderNumber}" class="form-control" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Supplier</label>
+                <select th:field="*{supplier.id}" class="form-select" required>
+                    <option value="">Select Supplier</option>
+                    <option th:each="s : ${suppliers}" th:value="${s.id}" th:text="${s.supplierName}"></option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Order Date</label>
+                <input type="date" th:field="*{orderDate}" class="form-control">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Expected Delivery</label>
+                <input type="date" th:field="*{expectedDeliveryDate}" class="form-control">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Status</label>
+                <select th:field="*{status}" class="form-select">
+                    <option value="PENDING">PENDING</option>
+                    <option value="APPROVED">APPROVED</option>
+                </select>
+            </div>
+            <div class="col-12">
+                <label class="form-label">Notes</label>
+                <textarea th:field="*{notes}" class="form-control" rows="2"></textarea>
+            </div>
+        </div></div></div>
 
-                <div class="mb-3">
-                    <label class="form-label">Order Number</label>
-                    <input type="text" th:field="*{orderNumber}" class="form-control" placeholder="PO-001" required>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Supplier</label>
-                    <select th:field="*{supplier.id}" class="form-select" required>
-                        <option value="">Select Supplier</option>
-                        <option th:each="supplier : ${suppliers}" th:value="${supplier.id}" th:text="${supplier.supplierName}"></option>
+        <div class="card mb-4">
+            <div class="card-header">Add Spare Parts</div>
+            <div class="card-body"><div class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label">Part</label>
+                    <select id="partSelect" class="form-select">
+                        <option value="">-- Select a spare part --</option>
+                        <option th:each="e : ${partOptions}" th:value="${e.key}" th:text="${e.value}"></option>
                     </select>
                 </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Order Date</label>
-                    <input type="date" th:field="*{orderDate}" class="form-control">
+                <div class="col-md-2">
+                    <label class="form-label">Quantity</label>
+                    <input type="number" id="qtyInput" class="form-control" min="1" value="1">
                 </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Expected Delivery Date</label>
-                    <input type="date" th:field="*{expectedDeliveryDate}" class="form-control">
+                <div class="col-md-3">
+                    <label class="form-label">Unit Cost (Rs.)</label>
+                    <input type="number" id="costInput" class="form-control" min="0" step="0.01" value="0">
                 </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Notes</label>
-                    <textarea th:field="*{notes}" class="form-control" rows="4"></textarea>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-primary w-100" onclick="addItem()"><i class="bi bi-plus-lg"></i> Add</button>
                 </div>
-
-                <input type="hidden" th:field="*{status}">
-
-                <div class="mt-4 d-flex gap-2">
-                    <button type="submit" class="btn btn-accent">Save Purchase Order</button>
-                    <a th:href="@{/purchase-orders}" class="btn btn-outline-secondary">Cancel</a>
-                </div>
-
-            </form>
+            </div></div>
         </div>
-    </div>
+
+        <div class="card mb-4">
+            <div class="card-header">Items</div>
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead><tr><th>Part</th><th>Quantity</th><th>Unit Cost</th><th>Line Total</th><th></th></tr></thead>
+                    <tbody id="itemsTable">
+                    <tr th:each="item : ${purchaseOrder.items}" class="item-row"
+                        th:attr="data-total=${item.orderedQuantity * (item.unitCost == null ? 0 : item.unitCost)}">
+                        <td><span th:text="${partNames[item.partId]}"></span>
+                            <input type="hidden" data-name="partId" th:value="${item.partId}"></td>
+                        <td><span th:text="${item.orderedQuantity}"></span>
+                            <input type="hidden" data-name="orderedQuantity" th:value="${item.orderedQuantity}"></td>
+                        <td><span th:text="${#numbers.formatDecimal(item.unitCost == null ? 0 : item.unitCost,1,'COMMA',2,'POINT')}"></span>
+                            <input type="hidden" data-name="unitCost" th:value="${item.unitCost == null ? 0 : item.unitCost}"></td>
+                        <td th:text="${#numbers.formatDecimal(item.orderedQuantity * (item.unitCost == null ? 0 : item.unitCost),1,'COMMA',2,'POINT')}"></td>
+                        <td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeRow(this)"><i class="bi bi-trash"></i></button></td>
+                    </tr>
+                    </tbody>
+                    <tfoot><tr><th colspan="3" class="text-end">Total (Rs.)</th><th id="grandTotal">0.00</th><th></th></tr></tfoot>
+                </table>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-accent">Save Purchase Order</button>
+            <a th:href="@{/purchase-orders}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </form>
+
+    <script>
+        function money(n) { return n.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
+
+        function addItem() {
+            const sel = document.getElementById('partSelect');
+            const qty = parseInt(document.getElementById('qtyInput').value);
+            const cost = parseFloat(document.getElementById('costInput').value) || 0;
+            if (!sel.value) { alert('Please select a part.'); return; }
+            if (!qty || qty < 1) { alert('Please enter a valid quantity.'); return; }
+            if (cost < 0) { alert('Unit cost cannot be negative.'); return; }
+
+            const total = qty * cost;
+            const tr = document.createElement('tr');
+            tr.className = 'item-row';
+            tr.dataset.total = total;
+            tr.innerHTML =
+                '<td><span class="pname"></span><input type="hidden" data-name="partId"></td>' +
+                '<td>' + qty + '<input type="hidden" data-name="orderedQuantity"></td>' +
+                '<td>' + money(cost) + '<input type="hidden" data-name="unitCost"></td>' +
+                '<td>' + money(total) + '</td>' +
+                '<td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeRow(this)"><i class="bi bi-trash"></i></button></td>';
+            tr.querySelector('.pname').textContent = sel.options[sel.selectedIndex].text;
+            tr.querySelector('[data-name="partId"]').value = sel.value;
+            tr.querySelector('[data-name="orderedQuantity"]').value = qty;
+            tr.querySelector('[data-name="unitCost"]').value = cost;
+
+            document.getElementById('itemsTable').appendChild(tr);
+            sel.value = '';
+            document.getElementById('qtyInput').value = 1;
+            document.getElementById('costInput').value = 0;
+            updateTotal();
+        }
+
+        function removeRow(btn) { btn.closest('tr').remove(); updateTotal(); }
+
+        function updateTotal() {
+            let t = 0;
+            document.querySelectorAll('#itemsTable .item-row').forEach(r => t += parseFloat(r.dataset.total) || 0);
+            document.getElementById('grandTotal').textContent = money(t);
+        }
+
+        function prepareSubmit() {
+            const rows = document.querySelectorAll('#itemsTable .item-row');
+            if (rows.length === 0) { alert('Add at least one part.'); return false; }
+            rows.forEach((row, i) => row.querySelectorAll('input[data-name]').forEach(
+                inp => inp.name = 'items[' + i + '].' + inp.dataset.name));
+            return true;
+        }
+
+        updateTotal();
+    </script>
 
 </section>
 </body>

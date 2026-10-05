@@ -1,64 +1,49 @@
-<!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title th:text="${editing} ? 'Edit user - ComSpare' : 'Add user - ComSpare'">User - ComSpare</title>
-    <link rel="stylesheet" th:href="@{/css/user.css}">
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
+<head><title>User form</title></head>
 <body>
-<header th:replace="~{fragments/user-nav :: nav}"></header>
-<main>
-    <div class="page-head">
-        <div>
-            <h1 th:text="${editing} ? 'Edit user' : 'Add user'">Add user</h1>
-            <p class="sub" th:text="${editing}
-                ? 'Changing the role takes effect the next time the person loads a page.'
-                : 'The new person signs in with this email and password.'"></p>
+<section>
+
+    <h2 class="mb-3" th:text="${user.id == null ? 'Add User' : 'Edit User'}">Add User</h2>
+
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+    <div class="card" style="max-width:600px;">
+        <div class="card-body">
+            <form th:action="${user.id == null} ? @{/users/save} : @{/users/update/{id}(id=${user.id})}"
+                  method="post" th:object="${user}">
+
+                <div class="mb-3">
+                    <label class="form-label">Name</label>
+                    <input type="text" th:field="*{name}" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" th:field="*{email}" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <input type="password" th:field="*{passwordHash}" class="form-control" minlength="8" th:required="${user.id == null}">
+                    <small class="text-muted" th:if="${user.id != null}">Leave blank to keep the existing password.</small>
+                    <small class="text-muted" th:if="${user.id == null}">At least 8 characters, with a letter and a number.</small>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Role</label>
+                    <select name="roleId" class="form-select" required>
+                        <option value="">Select Role</option>
+                        <option th:each="role : ${roles}" th:value="${role.id}" th:text="${role.roleName}"
+                                th:selected="${user.role != null and user.role.id == role.id}"></option>
+                    </select>
+                </div>
+
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-accent">Save</button>
+                    <a th:href="@{/users}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
         </div>
     </div>
 
-    <div class="panel pad">
-        <form th:object="${userForm}"
-              th:action="${editing} ? @{/users/{id}(id=${userForm.id})} : @{/users}"
-              method="post" class="form-grid" novalidate>
-
-            <div>
-                <label for="name">Full name</label>
-                <input type="text" id="name" th:field="*{name}" required>
-                <div class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
-            </div>
-
-            <div>
-                <label for="email">Email</label>
-                <input type="email" id="email" th:field="*{email}" required>
-                <div class="field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
-            </div>
-
-            <div>
-                <label for="roleId">Role</label>
-                <select id="roleId" th:field="*{roleId}" required>
-                    <option value="">Choose a role</option>
-                    <option th:each="r : ${roles}" th:value="${r.id}" th:text="${r.roleName}">Store Keeper</option>
-                </select>
-                <div class="field-error" th:if="${#fields.hasErrors('roleId')}" th:errors="*{roleId}"></div>
-            </div>
-
-            <div>
-                <label for="password" th:text="${editing} ? 'Reset password (optional)' : 'Temporary password'">Password</label>
-                <input type="password" id="password" th:field="*{password}" autocomplete="new-password">
-                <div class="hint" th:text="${editing}
-                    ? 'Leave blank to keep the current password.'
-                    : 'At least 8 characters, with a letter and a number.'"></div>
-                <div class="field-error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
-            </div>
-
-            <div class="form-actions">
-                <button type="submit" class="btn" th:text="${editing} ? 'Save changes' : 'Create account'">Save</button>
-                <a class="btn ghost" th:href="@{/users}">Cancel</a>
-            </div>
-        </form>
-    </div>
-</main>
+</section>
 </body>
 </html>

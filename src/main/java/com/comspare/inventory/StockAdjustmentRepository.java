@@ -7,4 +7,7 @@ import java.util.List;
 public interface StockAdjustmentRepository extends JpaRepository<StockAdjustment, Long> {
 
     List<StockAdjustment> findByPartIdOrderByAdjustmentDateDesc(Long partId);
+
+    void deleteByPartId(Long partId);
 }
+

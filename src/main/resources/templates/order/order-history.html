@@ -1,99 +1,39 @@
-<!DOCTYPE html>
-<html lang="en"
-      xmlns:th="http://www.thymeleaf.org">
-
-<head>
-    <meta charset="UTF-8">
-    <title>Order History</title>
-
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
-        }
-
-        h2 {
-            margin-bottom: 10px;
-        }
-
-        .customer {
-            margin-bottom: 20px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: left;
-        }
-
-        th {
-            background-color: #f2f2f2;
-        }
-
-        .empty {
-            padding: 20px;
-            border: 1px solid #ddd;
-        }
-    </style>
-</head>
-
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
+<head><title>Order History</title></head>
 <body>
+<section>
 
-<h2>My Order History</h2>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">Customer Order History</h2>
+        <a th:href="@{/orders}" class="btn btn-outline-secondary">Back to Orders</a>
+    </div>
 
-<div class="customer">
-    <strong>Customer Email:</strong>
-    <span th:text="${customerEmail}"></span>
-</div>
+    <div class="card mb-3"><div class="card-body">
+        <form th:action="@{/orders/history}" method="get" class="d-flex gap-2">
+            <input type="email" name="email" class="form-control" placeholder="Customer email" th:value="${customerEmail}" required>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Search</button>
+        </form>
+    </div></div>
 
-<!-- No orders -->
-<div class="empty" th:if="${#lists.isEmpty(orders)}">
-    <p>No previous orders found.</p>
-</div>
+    <div class="card" th:if="${customerEmail != null and !#strings.isEmpty(customerEmail)}">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead><tr><th>Order Number</th><th>Order Date</th><th>Total Amount</th><th>Status</th></tr></thead>
+                <tbody>
+                <tr th:each="o : ${orders}">
+                    <td th:text="${o.orderNumber}"></td>
+                    <td th:text="${#temporals.format(o.orderDate,'yyyy-MM-dd HH:mm')}"></td>
+                    <td th:text="'Rs. ' + ${#numbers.formatDecimal(o.totalAmount,1,'COMMA',2,'POINT')}"></td>
+                    <td th:text="${o.status}"></td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(orders)}"><td colspan="4" class="text-center py-4">No previous orders found.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-<!-- Orders -->
-<table th:if="${not #lists.isEmpty(orders)}">
-
-    <thead>
-    <tr>
-        <th>Order Number</th>
-        <th>Order Date</th>
-        <th>Total Amount</th>
-        <th>Status</th>
-    </tr>
-    </thead>
-
-    <tbody>
-
-    <tr th:each="order : ${orders}">
-
-        <td th:text="${order.orderNumber}">
-            ORD001
-        </td>
-
-        <td th:text="${order.orderDate}">
-            2026-09-17
-        </td>
-
-        <td th:text="${order.totalAmount}">
-            25000.00
-        </td>
-
-        <td th:text="${order.status}">
-            PENDING
-        </td>
-
-    </tr>
-
-    </tbody>
-
-</table>
-
+</section>
 </body>
 </html>
 

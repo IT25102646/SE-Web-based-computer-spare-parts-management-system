@@ -15,323 +15,129 @@ public class ReturnRequestController {
     private final ReturnRequestService returnRequestService;
     private final PartService partService;
 
-    public ReturnRequestController(
-            ReturnRequestService returnRequestService,
-            PartService partService) {
-
+    public ReturnRequestController(ReturnRequestService returnRequestService, PartService partService) {
         this.returnRequestService = returnRequestService;
         this.partService = partService;
     }
 
-    // ================= READ / LIST =================
-
     @GetMapping
-    public String listReturns(
-            @RequestParam(required = false) String search,
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) String claimType,
-            Model model) {
-
-        model.addAttribute(
-                "returns",
-                returnRequestService.searchReturns(
-                        search,
-                        status,
-                        claimType));
-
+    public String listReturns(@RequestParam(required = false) String search,
+                              @RequestParam(required = false) String status,
+                              @RequestParam(required = false) String claimType,
+                              Model model) {
+        model.addAttribute("returns", returnRequestService.searchReturns(search, status, claimType));
         model.addAttribute("search", search);
         model.addAttribute("status", status);
         model.addAttribute("claimType", claimType);
         model.addAttribute("pageTitle", "Returns & Warranty Claims");
-
         return "returns/return-list";
     }
 
-    // ================= CREATE FORM =================
-
     @GetMapping("/new")
     public String showCreateForm(Model model) {
-
-        model.addAttribute(
-                "returnRequest",
-                new ReturnRequest());
-
-        model.addAttribute(
-                "parts",
-                partService.getAllParts());
-
-        model.addAttribute(
-                "pageTitle",
-                "Create Return / Warranty Claim");
-
-        return "returns/return-form";
+        return form(new ReturnRequest(), "Create Return / Warranty Claim", model);
     }
-
-    // ================= CREATE =================
 
     @PostMapping("/save")
-    public String saveReturn(
-            @Valid @ModelAttribute("returnRequest")
-            ReturnRequest returnRequest,
-
-            BindingResult bindingResult,
-
-            Model model,
-
-            RedirectAttributes redirectAttributes) {
-
+    public String saveReturn(@Valid @ModelAttribute("returnRequest") ReturnRequest returnRequest,
+                             BindingResult bindingResult, Model model, RedirectAttributes ra) {
         if (bindingResult.hasErrors()) {
-
-            model.addAttribute(
-                    "parts",
-                    partService.getAllParts());
-
-            model.addAttribute(
-                    "pageTitle",
-                    "Create Return / Warranty Claim");
-
-            return "returns/return-form";
+            return form(returnRequest, "Create Return / Warranty Claim", model);
         }
-
         try {
-
-            returnRequestService.createReturnRequest(
-                    returnRequest);
-
-            redirectAttributes.addFlashAttribute(
-                    "successMessage",
-                    "Return request created successfully.");
-
+            returnRequestService.createReturnRequest(returnRequest);
+            ra.addFlashAttribute("successMessage", "Return request created successfully.");
             return "redirect:/returns";
-
         } catch (IllegalArgumentException e) {
-
-            model.addAttribute(
-                    "parts",
-                    partService.getAllParts());
-
-            model.addAttribute(
-                    "errorMessage",
-                    e.getMessage());
-
-            model.addAttribute(
-                    "pageTitle",
-                    "Create Return / Warranty Claim");
-
-            return "returns/return-form";
+            model.addAttribute("errorMessage", e.getMessage());
+            return form(returnRequest, "Create Return / Warranty Claim", model);
         }
     }
 
-    // ================= READ / DETAILS =================
-
     @GetMapping("/view/{id}")
-    public String viewReturn(
-            @PathVariable Long id,
-            Model model) {
-
-        model.addAttribute(
-                "returnRequest",
-                returnRequestService.getReturnById(id));
-
-        model.addAttribute(
-                "pageTitle",
-                "Return Claim Details");
-
+    public String viewReturn(@PathVariable Long id, Model model) {
+        model.addAttribute("returnRequest", returnRequestService.getReturnById(id));
+        model.addAttribute("pageTitle", "Return Claim Details");
         return "returns/return-details";
     }
 
-    // ================= UPDATE FORM =================
-
     @GetMapping("/edit/{id}")
-    public String showEditForm(
-            @PathVariable Long id,
-            Model model) {
-
-        model.addAttribute(
-                "returnRequest",
-                returnRequestService.getReturnById(id));
-
-        model.addAttribute(
-                "parts",
-                partService.getAllParts());
-
-        model.addAttribute(
-                "pageTitle",
-                "Edit Return Claim");
-
-        return "returns/return-form";
+    public String showEditForm(@PathVariable Long id, Model model) {
+        return form(returnRequestService.getReturnById(id), "Edit Return Claim", model);
     }
-
-    // ================= UPDATE =================
 
     @PostMapping("/update/{id}")
-    public String updateReturn(
-            @PathVariable Long id,
-
-            @Valid @ModelAttribute("returnRequest")
-            ReturnRequest returnRequest,
-
-            BindingResult bindingResult,
-
-            Model model,
-
-            RedirectAttributes redirectAttributes) {
-
+    public String updateReturn(@PathVariable Long id,
+                               @Valid @ModelAttribute("returnRequest") ReturnRequest returnRequest,
+                               BindingResult bindingResult, Model model, RedirectAttributes ra) {
+        returnRequest.setId(id); // keeps the form in "edit" mode if there is an error
         if (bindingResult.hasErrors()) {
-
-            model.addAttribute(
-                    "parts",
-                    partService.getAllParts());
-
-            model.addAttribute(
-                    "pageTitle",
-                    "Edit Return Claim");
-
-            return "returns/return-form";
+            return form(returnRequest, "Edit Return Claim", model);
         }
-
         try {
-
-            returnRequestService.updateReturnRequest(
-                    id,
-                    returnRequest);
-
-            redirectAttributes.addFlashAttribute(
-                    "successMessage",
-                    "Return request updated successfully.");
-
+            returnRequestService.updateReturnRequest(id, returnRequest);
+            ra.addFlashAttribute("successMessage", "Return request updated successfully.");
             return "redirect:/returns";
-
-        } catch (IllegalArgumentException |
-                 IllegalStateException e) {
-
-            model.addAttribute(
-                    "parts",
-                    partService.getAllParts());
-
-            model.addAttribute(
-                    "errorMessage",
-                    e.getMessage());
-
-            model.addAttribute(
-                    "pageTitle",
-                    "Edit Return Claim");
-
-            return "returns/return-form";
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            model.addAttribute("errorMessage", e.getMessage());
+            return form(returnRequest, "Edit Return Claim", model);
         }
     }
-
-    // ================= DELETE =================
 
     @PostMapping("/delete/{id}")
-    public String deleteReturn(
-            @PathVariable Long id,
-            RedirectAttributes redirectAttributes) {
-
+    public String deleteReturn(@PathVariable Long id, RedirectAttributes ra) {
         try {
-
             returnRequestService.deleteReturnRequest(id);
-
-            redirectAttributes.addFlashAttribute(
-                    "successMessage",
-                    "Return request deleted successfully.");
-
+            ra.addFlashAttribute("successMessage", "Return request deleted successfully.");
         } catch (IllegalStateException e) {
-
-            redirectAttributes.addFlashAttribute(
-                    "errorMessage",
-                    e.getMessage());
+            ra.addFlashAttribute("errorMessage", e.getMessage());
         }
-
         return "redirect:/returns";
     }
-
-    // ================= APPROVE =================
 
     @PostMapping("/approve/{id}")
-    public String approveReturn(
-            @PathVariable Long id,
-
-            @RequestParam(required = false)
-            String decisionNotes,
-
-            RedirectAttributes redirectAttributes) {
-
-        try {
-
-            returnRequestService.approveReturn(
-                    id,
-                    decisionNotes);
-
-            redirectAttributes.addFlashAttribute(
-                    "successMessage",
-                    "Return claim approved successfully.");
-
-        } catch (IllegalStateException |
-                 IllegalArgumentException e) {
-
-            redirectAttributes.addFlashAttribute(
-                    "errorMessage",
-                    e.getMessage());
-        }
-
-        return "redirect:/returns/view/" + id;
+    public String approveReturn(@PathVariable Long id,
+                                @RequestParam(required = false) String decisionNotes,
+                                @RequestParam(required = false) String resolution,
+                                RedirectAttributes ra) {
+        return action(id, ra, () -> returnRequestService.approveReturn(id, decisionNotes, resolution),
+                "Return claim approved and inventory updated.");
     }
-
-    // ================= REJECT =================
 
     @PostMapping("/reject/{id}")
-    public String rejectReturn(
-            @PathVariable Long id,
+    public String rejectReturn(@PathVariable Long id,
+                               @RequestParam(required = false) String decisionNotes,
+                               RedirectAttributes ra) {
+        return action(id, ra, () -> returnRequestService.rejectReturn(id, decisionNotes),
+                "Return claim rejected.");
+    }
 
-            @RequestParam(required = false)
-            String decisionNotes,
+    @PostMapping("/complete/{id}")
+    public String completeReturn(@PathVariable Long id, RedirectAttributes ra) {
+        return action(id, ra, () -> returnRequestService.completeReturn(id),
+                "Return claim marked as completed.");
+    }
 
-            RedirectAttributes redirectAttributes) {
+    @PostMapping("/cancel/{id}")
+    public String cancelReturn(@PathVariable Long id, RedirectAttributes ra) {
+        return action(id, ra, () -> returnRequestService.cancelReturn(id),
+                "Return claim cancelled.");
+    }
 
+    private String action(Long id, RedirectAttributes ra, Runnable work, String okMessage) {
         try {
-
-            returnRequestService.rejectReturn(
-                    id,
-                    decisionNotes);
-
-            redirectAttributes.addFlashAttribute(
-                    "successMessage",
-                    "Return claim rejected.");
-
-        } catch (IllegalStateException |
-                 IllegalArgumentException e) {
-
-            redirectAttributes.addFlashAttribute(
-                    "errorMessage",
-                    e.getMessage());
+            work.run();
+            ra.addFlashAttribute("successMessage", okMessage);
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            ra.addFlashAttribute("errorMessage", e.getMessage());
         }
-
         return "redirect:/returns/view/" + id;
     }
 
-    // ================= CANCEL =================
-
-    @PostMapping("/cancel/{id}")
-    public String cancelReturn(
-            @PathVariable Long id,
-            RedirectAttributes redirectAttributes) {
-
-        try {
-
-            returnRequestService.cancelReturn(id);
-
-            redirectAttributes.addFlashAttribute(
-                    "successMessage",
-                    "Return claim cancelled.");
-
-        } catch (IllegalStateException e) {
-
-            redirectAttributes.addFlashAttribute(
-                    "errorMessage",
-                    e.getMessage());
-        }
-
-        return "redirect:/returns";
+    private String form(ReturnRequest request, String title, Model model) {
+        model.addAttribute("returnRequest", request);
+        model.addAttribute("parts", partService.getAllParts());
+        model.addAttribute("pageTitle", title);
+        return "returns/return-form";
     }
 }

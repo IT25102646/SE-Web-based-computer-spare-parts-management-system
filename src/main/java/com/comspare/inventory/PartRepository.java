@@ -10,15 +10,19 @@ public interface PartRepository extends JpaRepository<Part, Long> {
 
     boolean existsByProductCode(String productCode);
 
-    // Powers UC-I07: Receive Low-Stock Alert
-    @Query("SELECT p FROM Part p WHERE p.stockQuantity <= p.reorderLevel")
+    List<Part> findByActiveOrderByNameAsc(Boolean active);
+
+    List<Part> findByActiveTrueOrderByNameAsc();
+
+    // Low-stock alert: active parts only
+    @Query("SELECT p FROM Part p WHERE p.active = true AND p.stockQuantity <= p.reorderLevel")
     List<Part> findLowStockParts();
 
-    // Powers the search bar on the inventory list page
-    @Query("SELECT p FROM Part p WHERE " +
-           "LOWER(p.productCode) LIKE LOWER(CONCAT('%', :term, '%')) OR " +
-           "LOWER(p.name) LIKE LOWER(CONCAT('%', :term, '%')) OR " +
-           "LOWER(p.brand) LIKE LOWER(CONCAT('%', :term, '%')) OR " +
-           "LOWER(p.category) LIKE LOWER(CONCAT('%', :term, '%'))")
-    List<Part> search(@Param("term") String term);
+    // Search bar on the inventory list (active or discontinued view)
+    @Query("SELECT p FROM Part p WHERE p.active = :active AND (" +
+            "LOWER(p.productCode) LIKE LOWER(CONCAT('%', :term, '%')) OR " +
+            "LOWER(p.name) LIKE LOWER(CONCAT('%', :term, '%')) OR " +
+            "LOWER(p.brand) LIKE LOWER(CONCAT('%', :term, '%')) OR " +
+            "LOWER(p.category) LIKE LOWER(CONCAT('%', :term, '%'))) ORDER BY p.name")
+    List<Part> search(@Param("term") String term, @Param("active") Boolean active);
 }

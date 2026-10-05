@@ -9,35 +9,31 @@
         <a th:href="@{/users}" class="btn btn-outline-secondary">Back to Users</a>
     </div>
 
+    <div class="card mb-3"><div class="card-body">
+        <form th:action="@{/users/audit}" method="get" class="d-flex gap-2">
+            <input type="text" name="q" class="form-control" placeholder="Search by user, action or record" th:value="${q}">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Search</button>
+            <a th:href="@{/users/audit}" class="btn btn-outline-secondary">Clear</a>
+        </form>
+    </div></div>
+
     <div class="card">
         <div class="table-responsive">
             <table class="table table-hover mb-0">
                 <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>User</th>
-                    <th>Action</th>
-                    <th>Table</th>
-                    <th>Record ID</th>
-                    <th>Old Value</th>
-                    <th>New Value</th>
-                    <th>Timestamp</th>
-                </tr>
+                <tr><th>ID</th><th>Who</th><th>Action</th><th>Record</th><th>Before</th><th>After</th><th>When</th></tr>
                 </thead>
                 <tbody>
                 <tr th:each="log : ${logs}">
                     <td th:text="${log.id}"></td>
-                    <td th:text="${log.user != null ? log.user.email : 'System'}"></td>
+                    <td th:text="${log.performedBy}"></td>
                     <td th:text="${log.action}"></td>
-                    <td th:text="${log.tableName}"></td>
-                    <td th:text="${log.recordId}"></td>
+                    <td th:text="${log.targetRecord}"></td>
                     <td th:text="${log.oldValue}"></td>
                     <td th:text="${log.newValue}"></td>
-                    <td th:text="${#temporals.format(log.timestamp,'yyyy-MM-dd HH:mm')}"></td>
+                    <td class="text-nowrap" th:text="${#temporals.format(log.loggedAt,'yyyy-MM-dd HH:mm')}"></td>
                 </tr>
-                <tr th:if="${#lists.isEmpty(logs)}">
-                    <td colspan="8" class="text-center py-4">No audit records found.</td>
-                </tr>
+                <tr th:if="${#lists.isEmpty(logs)}"><td colspan="7" class="text-center py-4">No audit records found.</td></tr>
                 </tbody>
             </table>
         </div>

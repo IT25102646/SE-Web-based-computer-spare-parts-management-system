@@ -1,0 +1,31 @@
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
+<head><title>Edit Invoice</title></head>
+<body>
+<section>
+
+    <h2 class="mb-4">Edit Invoice <span th:text="${invoice.invoiceNumber}"></span></h2>
+
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+    <div class="card" style="max-width: 700px;">
+        <div class="card-body">
+            <form th:action="@{/invoices/{id}/update(id=${invoice.id})}" method="post">
+                <div class="mb-3">
+                    <label class="form-label">Customer Name</label>
+                    <input type="text" name="customerName" class="form-control" th:value="${invoice.customerName}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Total Amount (Rs.)</label>
+                    <input type="number" name="totalAmount" step="0.01" min="0" class="form-control" th:value="${invoice.totalAmount}" required>
+                    <div class="form-text" th:text="'Already paid: Rs. ' + ${#numbers.formatDecimal(invoice.amountPaid,1,'COMMA',2,'POINT')} + ' (the total cannot go below this)'"></div>
+                </div>
+                <button type="submit" class="btn btn-primary">Save</button>
+                <a th:href="@{/invoices/{id}(id=${invoice.id})}" class="btn btn-outline-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+
+</section>
+</body>
+</html>

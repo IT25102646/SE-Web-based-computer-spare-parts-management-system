@@ -1,0 +1,42 @@
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(~{::title}, ~{::section})}">
+<head><title>Supplier Performance</title></head>
+<body>
+<section>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2 class="mb-1">Supplier Performance</h2>
+            <p class="text-muted mb-0">Reliability is calculated from received purchase orders (delivered on or before the expected date).</p>
+        </div>
+        <div>
+            <a th:href="@{/suppliers}" class="btn btn-outline-secondary">Suppliers</a>
+            <a th:href="@{/purchase-orders}" class="btn btn-primary">Purchase Orders</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                <tr><th>Supplier</th><th>Total Deliveries</th><th>On-Time</th><th>Late</th><th>Reliability</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="item : ${performance}">
+                    <td th:text="${item.supplierName}"></td>
+                    <td th:text="${item.totalDeliveries}"></td>
+                    <td th:text="${item.onTimeDeliveries}"></td>
+                    <td th:text="${item.lateDeliveries}"></td>
+                    <td th:text="${#numbers.formatDecimal(item.reliabilityPercentage, 1, 2)} + '%'"></td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(performance)}">
+                    <td colspan="5" class="text-center py-4">No supplier performance data available.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</section>
+</body>
+</html>

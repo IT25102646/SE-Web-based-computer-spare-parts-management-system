@@ -1,604 +1,147 @@
 package com.comspare.reports;
 
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+/**
+ * Report flow:  browser -> /reports/{name} -> ReportController -> report service (SQL on ComSpareDB)
+ *               -> ReportFormatter -> Thymeleaf page   (or PdfExportService for /pdf)
+ */
 @Controller
+@RequestMapping("/reports")
 public class ReportController {
 
-    private final InventoryReportService inventoryReportService;
-    private final SalesLossReportService salesLossReportService;
-    private final PdfExportService pdfExportService;
+    public record Card(String group, String name, String title, String description) { }
 
-    public ReportController(
-            InventoryReportService inventoryReportService,
-            SalesLossReportService salesLossReportService,
-            PdfExportService pdfExportService) {
+    private record Report(String title, String description, List<Map<String, Object>> rows,
+                          boolean dates, boolean category, List<String> statuses) { }
 
-        this.inventoryReportService = inventoryReportService;
-        this.salesLossReportService = salesLossReportService;
-        this.pdfExportService = pdfExportService;
+    private static final List<String> NONE = List.of();
+    private static final List<String> STOCK_STATUS = List.of("LOW", "OUT", "AVAILABLE");
+    private static final List<String> PO_STATUS = List.of("PENDING", "APPROVED", "RECEIVED", "CANCELLED");
+    private static final List<String> SALE_STATUS = List.of("PENDING", "CONFIRMED", "SHIPPED", "DELIVERED");
+    private static final List<String> RETURN_STATUS =
+            List.of("PENDING", "APPROVED", "REJECTED", "PROCESSING", "COMPLETED", "CANCELLED");
+    private static final List<String> INVOICE_STATUS = List.of("PENDING", "PARTIAL", "PAID");
+
+    private static final String G1 = "Inventory & Purchasing";
+    private static final String G2 = "Stock Prediction & Analytics";
+    private static final String G3 = "Sales, Returns, Billing & Loss";
+
+    private static final List<Card> CARDS = List.of(
+            new Card(G1, "stock", "Stock Report", "Current stock quantities, reorder levels, prices and stock values."),
+            new Card(G1, "low-stock", "Low Stock Report", "Parts at or below their reorder level."),
+            new Card(G1, "out-of-stock", "Out of Stock Report", "Parts that currently have zero stock."),
+            new Card(G1, "movement", "Stock Movement", "Received, sold, returned, adjusted and damaged movements."),
+            new Card(G1, "valuation", "Inventory Valuation", "Inventory value from stock quantity and price."),
+            new Card(G1, "purchases", "Purchase Report", "Purchase orders, suppliers, quantities and costs."),
+            new Card(G1, "purchase-expense", "Purchase Expense", "Spending on purchase orders and received stock."),
+            new Card(G1, "supplier-performance", "Supplier Performance", "Supplier orders, deliveries and fulfilment rates."),
+            new Card(G2, "reorder-prediction", "Reorder Prediction", "Suggested reorder quantities, with reorder-level update."),
+            new Card(G3, "sales", "Sales Report", "Sales orders, customers, parts and sales values."),
+            new Card(G3, "popular-items", "Popular Items", "Parts ranked by quantity sold."),
+            new Card(G3, "monthly-summary", "Monthly Summary", "Monthly order counts, items sold and sales totals."),
+            new Card(G3, "inventory-status", "Inventory Status", "In stock, low stock or out of stock for every part."),
+            new Card(G3, "returned", "Returned Items", "Customer returns, reasons, claims and statuses."),
+            new Card(G3, "damaged", "Damaged Items", "Stock recorded as damaged and its estimated value."),
+            new Card(G3, "loss", "Loss Report", "Estimated stock loss from damaged quantities."),
+            new Card(G3, "invoices", "Invoices & Payments", "Invoices, amounts paid and balances due.")
+    );
+
+    private final InventoryReportService inventory;
+    private final SalesLossReportService sales;
+    private final PdfExportService pdf;
+
+    public ReportController(InventoryReportService inventory, SalesLossReportService sales, PdfExportService pdf) {
+        this.inventory = inventory;
+        this.sales = sales;
+        this.pdf = pdf;
     }
 
-    // =========================================================
-    // REPORT DASHBOARD
-    // =========================================================
-
-    @GetMapping("/reports")
-    public String dashboard() {
+    @GetMapping
+    public String dashboard(Model model) {
+        model.addAttribute("groups", CARDS.stream()
+                .collect(Collectors.groupingBy(Card::group, LinkedHashMap::new, Collectors.toList())));
         return "reports/report-dashboard";
     }
 
-    // =========================================================
-    // 1. STOCK
-    // =========================================================
-
-    @GetMapping("/reports/stock")
-    public String stock(
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false) String status,
-            Model model) {
-
-        List<Map<String, Object>> rows =
-                inventoryReportService.getStockReport(category, status);
-
-        return view(
-                model,
-                "Stock Report",
-                "Current stock levels for all spare parts.",
-                rows,
-                category,
-                null,
-                status,
-                "stock"
-        );
-    }
-
-    // =========================================================
-    // 2. LOW STOCK
-    // =========================================================
-
-    @GetMapping("/reports/low-stock")
-    public String lowStock(
-            @RequestParam(required = false) String category,
-            Model model) {
-
-        List<Map<String, Object>> rows =
-                inventoryReportService.getLowStockReport(category);
-
-        return view(
-                model,
-                "Low Stock Report",
-                "Parts whose current stock is at or below the reorder level.",
-                rows,
-                category,
-                null,
-                null,
-                "low-stock"
-        );
-    }
-
-    // =========================================================
-    // 3. OUT OF STOCK
-    // =========================================================
-
-    @GetMapping("/reports/out-of-stock")
-    public String outOfStock(
-            @RequestParam(required = false) String category,
-            Model model) {
-
-        List<Map<String, Object>> rows =
-                inventoryReportService.getOutOfStockReport(category);
-
-        return view(
-                model,
-                "Out of Stock Report",
-                "Parts that currently have zero stock.",
-                rows,
-                category,
-                null,
-                null,
-                "out-of-stock"
-        );
-    }
-
-    // =========================================================
-    // 4. STOCK MOVEMENT
-    // =========================================================
-
-    @GetMapping("/reports/movement")
-    public String movement(
-            @RequestParam(required = false) String fromDate,
-            @RequestParam(required = false) String toDate,
-            @RequestParam(required = false) String category,
-            Model model) {
-
-        List<Map<String, Object>> rows =
-                inventoryReportService.getMovementReport(
-                        fromDate,
-                        toDate,
-                        category
-                );
-
-        return view(
-                model,
-                "Stock Movement Report",
-                "Recorded stock movements from part history.",
-                rows,
-                category,
-                fromDate,
-                toDate,
-                "movement"
-        );
-    }
-
-    // =========================================================
-    // 5. INVENTORY VALUATION
-    // =========================================================
-
-    @GetMapping("/reports/valuation")
-    public String valuation(
-            @RequestParam(required = false) String category,
-            Model model) {
-
-        List<Map<String, Object>> rows =
-                inventoryReportService.getValuationReport(category);
-
-        return view(
-                model,
-                "Inventory Valuation Report",
-                "Current inventory value calculated from stock quantity and part price.",
-                rows,
-                category,
-                null,
-                null,
-                "valuation"
-        );
-    }
-
-    // =========================================================
-    // 6. PURCHASES
-    // =========================================================
-
-    @GetMapping("/reports/purchases")
-    public String purchases(
-            @RequestParam(required = false) String fromDate,
-            @RequestParam(required = false) String toDate,
-            @RequestParam(required = false) String status,
-            Model model) {
-
-        List<Map<String, Object>> rows =
-                inventoryReportService.getPurchaseReport(
-                        fromDate,
-                        toDate,
-                        status
-                );
-
-        return view(
-                model,
-                "Purchase Report",
-                "Purchase orders, suppliers, quantities and purchase values.",
-                rows,
-                null,
-                fromDate,
-                toDate,
-                "purchases"
-        );
-    }
-
-    // =========================================================
-    // 7. PURCHASE EXPENSE
-    // =========================================================
-
-    @GetMapping("/reports/purchase-expense")
-    public String purchaseExpense(
-            @RequestParam(required = false) String fromDate,
-            @RequestParam(required = false) String toDate,
-            Model model) {
-
-        List<Map<String, Object>> rows =
-                inventoryReportService.getPurchaseExpenseReport(
-                        fromDate,
-                        toDate
-                );
-
-        return view(
-                model,
-                "Purchase Expense Report",
-                "Purchase expenditure calculated from ordered quantities and unit costs.",
-                rows,
-                null,
-                fromDate,
-                toDate,
-                "purchase-expense"
-        );
-    }
-
-    // =========================================================
-    // 8. SUPPLIER PERFORMANCE
-    // =========================================================
-
-    @GetMapping("/reports/supplier-performance")
-    public String supplierPerformance(
-            @RequestParam(required = false) String fromDate,
-            @RequestParam(required = false) String toDate,
-            Model model) {
-
-        List<Map<String, Object>> rows =
-                inventoryReportService.getSupplierPerformanceReport(
-                        fromDate,
-                        toDate
-                );
-
-        return view(
-                model,
-                "Supplier Performance Report",
-                "Supplier order, delivery and fulfillment information.",
-                rows,
-                null,
-                fromDate,
-                toDate,
-                "supplier-performance"
-        );
-    }
-
-    // =========================================================
-    // 9. SALES
-    // =========================================================
-
-    @GetMapping("/reports/sales")
-    public String sales(
-            @RequestParam(required = false) String fromDate,
-            @RequestParam(required = false) String toDate,
-            @RequestParam(required = false) String status,
-            Model model) {
-
-        List<Map<String, Object>> rows =
-                salesLossReportService.getSalesReport(
-                        fromDate,
-                        toDate,
-                        status
-                );
-
-        return view(
-                model,
-                "Sales Report",
-                "Sales recorded from non-cancelled customer orders.",
-                rows,
-                null,
-                fromDate,
-                toDate,
-                "sales"
-        );
-    }
-
-    // =========================================================
-    // 10. POPULAR ITEMS
-    // =========================================================
-
-    @GetMapping("/reports/popular-items")
-    public String popularItems(
-            @RequestParam(required = false) String fromDate,
-            @RequestParam(required = false) String toDate,
-            Model model) {
-
-        List<Map<String, Object>> rows =
-                salesLossReportService.getPopularItemsReport(
-                        fromDate,
-                        toDate
-                );
-
-        return view(
-                model,
-                "Popular Items Report",
-                "Parts ranked by total quantity sold.",
-                rows,
-                null,
-                fromDate,
-                toDate,
-                "popular-items"
-        );
-    }
-
-    // =========================================================
-    // 11. DAMAGED
-    // =========================================================
-
-    @GetMapping("/reports/damaged")
-    public String damaged(
-            @RequestParam(required = false) String fromDate,
-            @RequestParam(required = false) String toDate,
-            @RequestParam(required = false) String category,
-            Model model) {
-
-        List<Map<String, Object>> rows =
-                salesLossReportService.getDamagedReport(
-                        fromDate,
-                        toDate,
-                        category
-                );
-
-        return view(
-                model,
-                "Damaged Items Report",
-                "Damaged stock recorded in part history.",
-                rows,
-                category,
-                fromDate,
-                toDate,
-                "damaged"
-        );
-    }
-
-    // =========================================================
-    // 12. RETURNED
-    // =========================================================
-
-    @GetMapping("/reports/returned")
-    public String returned(
-            @RequestParam(required = false) String fromDate,
-            @RequestParam(required = false) String toDate,
-            @RequestParam(required = false) String status,
-            Model model) {
-
-        List<Map<String, Object>> rows =
-                salesLossReportService.getReturnedReport(
-                        fromDate,
-                        toDate,
-                        status
-                );
-
-        return view(
-                model,
-                "Returned Items Report",
-                "Customer return requests and their current status.",
-                rows,
-                null,
-                fromDate,
-                toDate,
-                "returned"
-        );
-    }
-
-    // =========================================================
-    // 13. LOSS
-    // =========================================================
-
-    @GetMapping("/reports/loss")
-    public String loss(
-            @RequestParam(required = false) String fromDate,
-            @RequestParam(required = false) String toDate,
-            Model model) {
-
-        List<Map<String, Object>> rows =
-                salesLossReportService.getLossReport(
-                        fromDate,
-                        toDate
-                );
-
-        return view(
-                model,
-                "Loss Report",
-                "Estimated stock loss based on recorded damaged items.",
-                rows,
-                null,
-                fromDate,
-                toDate,
-                "loss"
-        );
-    }
-
-    // =========================================================
-    // 14. MONTHLY SUMMARY
-    // =========================================================
-
-    @GetMapping("/reports/monthly-summary")
-    public String monthlySummary(
-            @RequestParam(required = false) String fromDate,
-            @RequestParam(required = false) String toDate,
-            Model model) {
-
-        List<Map<String, Object>> rows =
-                salesLossReportService.getMonthlySummaryReport(
-                        fromDate,
-                        toDate
-                );
-
-        return view(
-                model,
-                "Monthly Sales Summary",
-                "Monthly order, item and sales totals.",
-                rows,
-                null,
-                fromDate,
-                toDate,
-                "monthly-summary"
-        );
-    }
-
-    // =========================================================
-    // 15. INVENTORY STATUS
-    // =========================================================
-
-    @GetMapping("/reports/inventory-status")
-    public String inventoryStatus(
-            @RequestParam(required = false) String category,
-            Model model) {
-
-        List<Map<String, Object>> rows =
-                salesLossReportService.getInventoryStatusReport(category);
-
-        return view(
-                model,
-                "Inventory Status Report",
-                "Current inventory classification by stock availability.",
-                rows,
-                category,
-                null,
-                null,
-                "inventory-status"
-        );
-    }
-
-    // =========================================================
-    // PDF EXPORT
-    // =========================================================
-
-    @GetMapping("/reports/{reportName}/pdf")
-    public void exportPdf(
-            @PathVariable String reportName,
-            @RequestParam(required = false) String fromDate,
-            @RequestParam(required = false) String toDate,
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false) String status,
-            jakarta.servlet.http.HttpServletResponse response)
-            throws Exception {
-
-        List<Map<String, Object>> rows;
-        String title;
-
-        switch (reportName) {
-
-            case "stock" -> {
-                rows = inventoryReportService.getStockReport(
-                        category, status);
-                title = "Stock Report";
-            }
-
-            case "low-stock" -> {
-                rows = inventoryReportService.getLowStockReport(
-                        category);
-                title = "Low Stock Report";
-            }
-
-            case "out-of-stock" -> {
-                rows = inventoryReportService.getOutOfStockReport(
-                        category);
-                title = "Out of Stock Report";
-            }
-
-            case "movement" -> {
-                rows = inventoryReportService.getMovementReport(
-                        fromDate, toDate, category);
-                title = "Stock Movement Report";
-            }
-
-            case "valuation" -> {
-                rows = inventoryReportService.getValuationReport(
-                        category);
-                title = "Inventory Valuation Report";
-            }
-
-            case "purchases" -> {
-                rows = inventoryReportService.getPurchaseReport(
-                        fromDate, toDate, status);
-                title = "Purchase Report";
-            }
-
-            case "purchase-expense" -> {
-                rows = inventoryReportService.getPurchaseExpenseReport(
-                        fromDate, toDate);
-                title = "Purchase Expense Report";
-            }
-
-            case "supplier-performance" -> {
-                rows = inventoryReportService.getSupplierPerformanceReport(
-                        fromDate, toDate);
-                title = "Supplier Performance Report";
-            }
-
-            case "sales" -> {
-                rows = salesLossReportService.getSalesReport(
-                        fromDate, toDate, status);
-                title = "Sales Report";
-            }
-
-            case "popular-items" -> {
-                rows = salesLossReportService.getPopularItemsReport(
-                        fromDate, toDate);
-                title = "Popular Items Report";
-            }
-
-            case "damaged" -> {
-                rows = salesLossReportService.getDamagedReport(
-                        fromDate, toDate, category);
-                title = "Damaged Items Report";
-            }
-
-            case "returned" -> {
-                rows = salesLossReportService.getReturnedReport(
-                        fromDate, toDate, status);
-                title = "Returned Items Report";
-            }
-
-            case "loss" -> {
-                rows = salesLossReportService.getLossReport(
-                        fromDate, toDate);
-                title = "Loss Report";
-            }
-
-            case "monthly-summary" -> {
-                rows = salesLossReportService.getMonthlySummaryReport(
-                        fromDate, toDate);
-                title = "Monthly Sales Summary";
-            }
-
-            case "inventory-status" -> {
-                rows = salesLossReportService.getInventoryStatusReport(
-                        category);
-                title = "Inventory Status Report";
-            }
-
-            default -> {
-                response.sendError(
-                        jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND,
-                        "Unknown report: " + reportName
-                );
-                return;
-            }
-        }
-
-        response.setContentType("application/pdf");
-        response.setHeader(
-                "Content-Disposition",
-                "attachment; filename=\"" + reportName + "-report.pdf\""
-        );
-
-        pdfExportService.export(
-                title,
-                rows,
-                response.getOutputStream()
-        );
-    }
-
-    // =========================================================
-    // COMMON VIEW METHOD
-    // =========================================================
-
-    private String view(
-            Model model,
-            String title,
-            String description,
-            List<Map<String, Object>> rows,
-            String category,
-            String fromDate,
-            String toDate,
-            String reportName) {
-
-        model.addAttribute("reportTitle", title);
-        model.addAttribute("reportDescription", description);
-        model.addAttribute("rows", rows);
-        model.addAttribute("category", category);
+    @GetMapping("/{name}")
+    public String show(@PathVariable String name,
+                       @RequestParam(required = false) String fromDate,
+                       @RequestParam(required = false) String toDate,
+                       @RequestParam(required = false) String category,
+                       @RequestParam(required = false) String status,
+                       Model model) {
+
+        Report r = build(name, fromDate, toDate, category, status);
+        boolean reorder = "reorder-prediction".equals(name);
+
+        model.addAttribute("reportName", name);
+        model.addAttribute("reportTitle", r.title());
+        model.addAttribute("reportDescription", r.description());
+        model.addAttribute("rows", ReportFormatter.format(r.rows(), !reorder));
         model.addAttribute("fromDate", fromDate);
         model.addAttribute("toDate", toDate);
-        model.addAttribute("reportName", reportName);
+        model.addAttribute("category", category);
+        model.addAttribute("status", status);
+        model.addAttribute("showDates", r.dates());
+        model.addAttribute("showCategory", r.category());
+        model.addAttribute("statuses", r.statuses());
 
-        return "reports/report-view";
+        return reorder ? "reports/reorder-prediction" : "reports/report-view";
+    }
+
+    @GetMapping("/{name}/pdf")
+    public void exportPdf(@PathVariable String name,
+                          @RequestParam(required = false) String fromDate,
+                          @RequestParam(required = false) String toDate,
+                          @RequestParam(required = false) String category,
+                          @RequestParam(required = false) String status,
+                          HttpServletResponse response) throws Exception {
+
+        Report r = build(name, fromDate, toDate, category, status);
+
+        response.setContentType("application/pdf");
+        response.setHeader("Content-Disposition", "attachment; filename=\"" + name + "-report.pdf\"");
+        pdf.export(r.title(), ReportFormatter.format(r.rows(), true), response.getOutputStream());
+    }
+
+    private Report build(String name, String from, String to, String cat, String status) {
+        return switch (name) {
+            case "stock" -> new Report("Stock Report", desc(name), inventory.getStockReport(cat, status), false, true, STOCK_STATUS);
+            case "low-stock" -> new Report("Low Stock Report", desc(name), inventory.getLowStockReport(cat), false, true, NONE);
+            case "out-of-stock" -> new Report("Out of Stock Report", desc(name), inventory.getOutOfStockReport(cat), false, true, NONE);
+            case "movement" -> new Report("Stock Movement Report", desc(name), inventory.getMovementReport(from, to, cat), true, true, NONE);
+            case "valuation" -> new Report("Inventory Valuation Report", desc(name), inventory.getValuationReport(cat), false, true, NONE);
+            case "purchases" -> new Report("Purchase Report", desc(name), inventory.getPurchaseReport(from, to, status), true, false, PO_STATUS);
+            case "purchase-expense" -> new Report("Purchase Expense Report", desc(name), inventory.getPurchaseExpenseReport(from, to), true, false, NONE);
+            case "supplier-performance" -> new Report("Supplier Performance Report", desc(name), inventory.getSupplierPerformanceReport(from, to), true, false, NONE);
+            case "reorder-prediction" -> new Report("Reorder Prediction Report", desc(name), inventory.getReorderPredictions(cat), false, true, NONE);
+            case "sales" -> new Report("Sales Report", desc(name), sales.getSalesReport(from, to, status), true, false, SALE_STATUS);
+            case "popular-items" -> new Report("Popular Items Report", desc(name), sales.getPopularItemsReport(from, to), true, false, NONE);
+            case "monthly-summary" -> new Report("Monthly Sales Summary", desc(name), sales.getMonthlySummaryReport(from, to), true, false, NONE);
+            case "inventory-status" -> new Report("Inventory Status Report", desc(name), sales.getInventoryStatusReport(cat), false, true, NONE);
+            case "returned" -> new Report("Returned Items Report", desc(name), sales.getReturnedReport(from, to, status), true, false, RETURN_STATUS);
+            case "damaged" -> new Report("Damaged Items Report", desc(name), sales.getDamagedReport(from, to, cat), true, true, NONE);
+            case "loss" -> new Report("Loss Report", desc(name), sales.getLossReport(from, to), true, false, NONE);
+            case "invoices" -> new Report("Invoices & Payments Report", desc(name), sales.getInvoiceReport(from, to, status), true, false, INVOICE_STATUS);
+            default -> throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown report: " + name);
+        };
+    }
+
+    private String desc(String name) {
+        return CARDS.stream().filter(c -> c.name().equals(name)).map(Card::description).findFirst().orElse("");
     }
 }
